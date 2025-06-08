@@ -1,0 +1,4 @@
+# Python 3.12.7
+
+pygame==2.6.1
+pymunk==7.0.0
