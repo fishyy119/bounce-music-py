@@ -80,3 +80,12 @@ class CoordinateTransformer:
 
     def update_screen_size(self, new_size: tuple[int, int]):
         self.width, self.height = new_size
+
+
+class Metronome:
+    def __init__(self):
+        self.last_tick = 0
+
+    def __call__(self, ms: int):
+        print(f"{ms / 1000:.2f} - {(ms - self.last_tick) / 1000:.2f}")
+        self.last_tick = ms

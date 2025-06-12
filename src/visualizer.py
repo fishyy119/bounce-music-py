@@ -2,10 +2,10 @@ import pygame
 from body import Ball
 from boundary import CircleBoundary
 from simulator import Simulator
-from utils import Vec2, CoordinateTransformer
-from typing import Tuple
+from utils import Vec2, CoordinateTransformer, Metronome
+from typing import Tuple, TypeAlias
 
-Color = Tuple[int, int, int]  # RGB颜色类型
+Color: TypeAlias = Tuple[int, int, int]  # RGB颜色类型
 
 
 class Visualizer:
@@ -65,17 +65,19 @@ class Visualizer:
 
 
 if __name__ == "__main__":
-    vis = Visualizer(ppm=10)
+    vis = Visualizer(ppm=8)
     ball = Ball(pos=Vec2(-5, 0), vel=Vec2(0, 0), acc=Vec2(0, -9.81), radius=0.5)
-    boundary = CircleBoundary(center=Vec2(0, 0), radius=10, restitution=1)
+    boundary = CircleBoundary(center=Vec2(0, 0), radius=15, restitution=1.0)
     simulator = Simulator(ball, boundary)
+    metronome = Metronome()
 
     running = True
     while running:
         dt = vis.clock.get_time() / 1000  # 秒
-        simulator.step(dt)
+        if simulator.step(dt):
+            metronome(pygame.time.get_ticks())
         running = vis.handle_events()
         vis.clear()
         vis.draw_container(boundary)
         vis.draw_ball(ball)  # 居中小球
-        vis.tick(60)
+        vis.tick(120)

@@ -8,14 +8,16 @@ class Boundary(ABC):
     restitution: float
 
     @abstractmethod
+    def get_normal(self, pos: Vec2) -> Vec2:
+        """获取单位外法向量"""
+
+    @abstractmethod
     def reflect(self, ball: Ball, override_e: float | None = None) -> Vec2:
         """返回小球碰撞后的速度向量，不修改小球成员"""
-        pass
 
     @abstractmethod
     def is_colliding(self, ball: Ball) -> bool:
         """判断小球是否与边界碰撞"""
-        pass
 
 
 class CircleBoundary(Boundary):
@@ -24,6 +26,10 @@ class CircleBoundary(Boundary):
         self.radius = radius
         self.restitution = restitution
 
+    def get_normal(self, pos: Vec2) -> Vec2:
+        # 返回单位外法向量
+        return (pos - self.center).normalized()
+
     def is_colliding(self, ball: Ball) -> bool:
         return (ball.pos - self.center).vec_len() >= self.radius - ball.radius
 
@@ -31,6 +37,6 @@ class CircleBoundary(Boundary):
         # 反射逻辑：速度沿法线反弹
         # 反射公式 v' = v - (1 + e)(v·n)n
         e = override_e if override_e is not None else self.restitution
-        normal = (ball.pos - self.center).normalized()
+        normal = self.get_normal(ball.pos)
         reflected = ball.vel - (1 + e) * ball.vel.dot(normal) * normal
         return reflected

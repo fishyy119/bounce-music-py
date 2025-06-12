@@ -12,26 +12,49 @@ class Simulator:
         self.ball.acc = Vec2(0, -self.g)  # 设置重力加速度
         self.bounce_flag = False
 
-    def change_restitution(self, pos: Vec2, vel: Vec2, t_f: float) -> float:
-        """根据期望的时间，修改恢复系数"""
-        g = self.g
-        a = vel.vec_len() ** 2 * t_f**2
-        b = 2 * t_f * vel.dot(pos) - vel.y * g * t_f**3
-        c = g**2 * t_f**4 / 4 - pos.y * g * t_f**2
+    def change_restitution(
+        self, pos: Vec2, vel: Vec2, norm: Vec2, t_f: float
+    ) -> float | None:
+        """根据期望的时间，计算期望恢复系数，输入反弹前速度vel与外法向norm"""
+        if not isinstance(self.boundary, CircleBoundary):
+            raise NotImplementedError
 
-        roots = np.roots([a, b, c])  # 返回所有复数根
-        real_roots = [r for r in roots if np.isreal(r)]  # 筛选实数根
+        acc = Vec2(0, -self.g)  # 重力加速度
+        r_f = pos + vel * t_f + 0.5 * acc * t_f**2
+        A = t_f**2
+        B = 2 * t_f * r_f.dot(norm)
+        C = r_f.dot(r_f) - (self.boundary.radius - self.ball.radius) ** 2
 
-        return min(real_roots) if real_roots else -1
+        roots = np.roots([A, B, C])  # 返回所有复数根
+        real_roots = roots[np.isreal(roots)].real  # 保持为np数组，只取实根
+
+        # 理论公式：k = -(1+e)*vel.dot(norm)
+        k = real_roots / (-vel.dot(norm)) - 1
+        print(f"{k=}")
+        k = k[k > 0]  # 只保留正值
+
+        # 设定选取最小值和最大值的比例，例如 p 选最小值，1-p 选最大值
+        p = 1
+        if len(k) > 0:
+            return min(k) if np.random.rand() < p else max(k)
+        else:
+            return None
 
     def step(self, dt: float) -> bool:
         self.ball.update(dt)
-        print(f"{self.ball.vel=}")
+        # print(f"{self.ball.vel=}")
         if self.boundary.is_colliding(self.ball):
             if not self.bounce_flag:
-                self.ball.vel = self.boundary.reflect(self.ball)
+                new_e = self.change_restitution(
+                    self.ball.pos,
+                    self.ball.vel,
+                    self.boundary.get_normal(self.ball.pos),
+                    1.5,
+                )
+                self.ball.vel = self.boundary.reflect(self.ball, override_e=new_e)
                 self.bounce_flag = True
-            return True  # 表示发生碰撞
+                return True  # 表示发生碰撞
+            return False
         self.bounce_flag = False
         return False
 
