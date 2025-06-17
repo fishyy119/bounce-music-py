@@ -7,6 +7,73 @@ from typing import Tuple, TypeAlias
 
 Color: TypeAlias = Tuple[int, int, int]  # RGB颜色类型
 
+import mido
+import pygame.midi
+import time
+
+
+class MidiNotePlayer:
+    def __init__(self, midi_path: str):
+        self.midi = mido.MidiFile(midi_path)
+        self.events = self._collect_events()
+        self.current_index = 0
+
+        pygame.midi.init()
+        self.midi_out = pygame.midi.Output(0)  # 默认设备
+
+        self.tempo = 500000  # 默认 120 BPM
+        for msg in self.midi:  # 查找 tempo
+            if msg.type == "set_tempo":
+                self.tempo = msg.tempo
+                break
+
+    def _collect_events(self):
+        events = []
+        abs_time = 0.0
+        ticks_per_beat = self.midi.ticks_per_beat
+
+        for msg in self.midi:
+            abs_time += mido.tick2second(msg.time, ticks_per_beat, self.tempo)
+            if msg.type in ["note_on", "note_off"]:
+                events.append((abs_time, msg))
+        return events
+
+    def step(self) -> float | None:
+        """播放当前时间点所有音符，并返回到下一音符的时间间隔"""
+        if self.current_index >= len(self.events):
+            return None  # 播放结束
+
+        # 当前时间点
+        current_time = self.events[self.current_index][0]
+
+        # 收集所有与当前时间相同的 note_on/note_off
+        batch = []
+        while self.current_index < len(self.events):
+            event_time, msg = self.events[self.current_index]
+            if abs(event_time - current_time) < 1e-6:
+                batch.append(msg)
+                self.current_index += 1
+            else:
+                break
+
+        # 播放所有音符
+        for msg in batch:
+            if msg.type == "note_on":
+                self.midi_out.note_on(msg.note, msg.velocity, msg.channel)
+            elif msg.type == "note_off":
+                self.midi_out.note_off(msg.note, msg.velocity, msg.channel)
+
+        # 计算下一事件的时间差
+        if self.current_index < len(self.events):
+            next_time = self.events[self.current_index][0]
+            return next_time - current_time
+        else:
+            return None
+
+    def close(self):
+        self.midi_out.close()
+        pygame.midi.quit()
+
 
 class Visualizer:
     def __init__(
