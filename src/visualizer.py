@@ -1,15 +1,16 @@
-import pygame
-from body import Ball
-from boundary import CircleBoundary
-from simulator import Simulator
-from utils import Vec2, CoordinateTransformer, Metronome
+import time
 from typing import Tuple, TypeAlias
 
-Color: TypeAlias = Tuple[int, int, int]  # RGB颜色类型
-
 import mido
+import pygame
 import pygame.midi
-import time
+
+from .body import Ball
+from .boundary import CircleBoundary
+from .simulator import Simulator
+from .utils import CoordinateTransformer, Metronome, Vec2
+
+Color: TypeAlias = Tuple[int, int, int]  # RGB颜色类型
 
 
 class MidiNotePlayer:

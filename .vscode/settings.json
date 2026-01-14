@@ -1,0 +1,10 @@
+{
+    "files.exclude": {
+        "**/__pycache__": true
+    },
+    "spellright.language": [],
+    "spellright.documentTypes": [
+        "latex",
+        "plaintext"
+    ]
+}

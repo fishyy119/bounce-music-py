@@ -1,7 +1,6 @@
-from math import hypot
-
-from typing import List, Tuple, TypeAlias, Union, overload
 from dataclasses import dataclass
+from math import hypot
+from typing import List, Tuple, TypeAlias, Union, overload
 
 ScreenReturn: TypeAlias = Union["Vec2", float, None]
 

@@ -1,7 +1,7 @@
-from utils import Vec2
-from body import Ball
-
 from abc import ABC, abstractmethod
+
+from .body import Ball
+from .utils import Vec2
 
 
 class Boundary(ABC):

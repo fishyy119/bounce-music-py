@@ -27,7 +27,7 @@ $$
 
 $$
 \begin{align}
-\vec{p}(t) 
+\vec{p}(t)
 &= \vec{p}_0 +( \vec{v}_{-1} + k\vec{n}) t + \frac{1}{2} \vec{a} t^2 \\
 &= \vec{r}(t) + kt\vec{n}
 \end{align}
@@ -36,7 +36,7 @@ $$
 其中：
 
 - $\vec{p}(t)$：某一时刻的位置
--  $\vec{p}_{0}$​ ：运动的初始位置
+- $\vec{p}_{0}$​ ：运动的初始位置
 - $\vec{a}$：仅考虑常数的情形
 
 ## 计算恢复系数
