@@ -8,11 +8,16 @@ from .utils import Vec2
 
 class Simulator:
     def __init__(self, ball: Ball, boundary: Boundary, gravity: float = 9.81) -> None:
+        self.time = 0
         self.ball = ball
         self.boundary = boundary
         self.g = gravity
         self.ball.acc = Vec2(0, -self.g)  # 设置重力加速度
         self.bounce_flag = False
+
+    def reset_time(self) -> None:
+        """第一段下落是不可控的，所以需要将第一次反弹视作时间起点"""
+        self.time = 0
 
     def calc_desired_restitution(self, t_f: float) -> Float[np.ndarray, "n"] | None:
         """
@@ -57,6 +62,7 @@ class Simulator:
             bool: 是否发生碰撞
         """
         self.ball.update(dt)
+        self.time += dt
         if self.boundary.is_colliding(self.ball):
             return not self.bounce_flag
         else:

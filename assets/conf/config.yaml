@@ -1,0 +1,9 @@
+simulation:
+  dt: 0.001
+
+defaults:
+  - base_config
+  - ball: default_ball
+  - boundary: default_boundary
+  - music: haru_hikage
+  - _self_

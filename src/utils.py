@@ -1,8 +1,13 @@
 from dataclasses import dataclass
 from math import hypot
-from typing import List, Tuple, TypeAlias, Union, overload
+from typing import List, Protocol, Tuple, TypeAlias, Union, overload
 
 ScreenReturn: TypeAlias = Union["Vec2", float, None]
+
+
+class XYProtocol(Protocol):
+    x: float
+    y: float
 
 
 @dataclass
@@ -13,6 +18,10 @@ class Vec2:
     @property
     def as_tuple(self) -> Tuple[float, float]:
         return (self.x, self.y)
+
+    @classmethod
+    def from_hydra(cls, data: XYProtocol) -> "Vec2":
+        return cls(x=data.x, y=data.y)
 
     @overload
     def __getitem__(self, index: int) -> float: ...
@@ -79,12 +88,3 @@ class CoordinateTransformer:
 
     def update_screen_size(self, new_size: tuple[int, int]):
         self.width, self.height = new_size
-
-
-class Metronome:
-    def __init__(self):
-        self.last_tick = 0
-
-    def __call__(self, ms: int):
-        print(f"{ms / 1000:.2f} - {(ms - self.last_tick) / 1000:.2f}")
-        self.last_tick = ms
