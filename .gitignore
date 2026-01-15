@@ -1,6 +1,12 @@
 temp*
 outcmaes
 outputs/*
+media/*
+**/config.tmp.json
+*.sf2
+*.mp4
+*.wav
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

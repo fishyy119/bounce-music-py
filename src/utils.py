@@ -1,8 +1,12 @@
 from dataclasses import dataclass
 from math import hypot
-from typing import List, Protocol, Tuple, TypeAlias, Union, overload
+from pathlib import Path
+from typing import List, Protocol, Sequence, Tuple, overload
 
-ScreenReturn: TypeAlias = Union["Vec2", float, None]
+from rich import print
+
+PROJECT_ROOT = Path(__file__).parent.parent
+ASSETS_PATH = PROJECT_ROOT / "assets"
 
 
 class XYProtocol(Protocol):
@@ -22,6 +26,10 @@ class Vec2:
     @classmethod
     def from_hydra(cls, data: XYProtocol) -> "Vec2":
         return cls(x=data.x, y=data.y)
+
+    @classmethod
+    def from_tuple(cls, data: Sequence[float]) -> "Vec2":
+        return cls(x=data[0], y=data[1])
 
     @overload
     def __getitem__(self, index: int) -> float: ...
@@ -57,34 +65,40 @@ class Vec2:
         return f"Vec2{{x:{self.x:.3f}, y:{self.y:.3f}}}"
 
 
-class CoordinateTransformer:
-    def __init__(self, screen_size: tuple[int, int], ppm: float):
-        self.width, self.height = screen_size
-        # self.screen_center = screen_center  # 屏幕中心在屏幕坐标系下坐标
-        self.ppm = ppm  # pixels / meter
+class OnlineStats:
+    def __init__(self):
+        self.n = 0
+        self.mean = 0.0  # 均值
+        self.m2 = 0.0  # 和方差相差一个除数n
+        self.max = float("-inf")
+        self.min = float("inf")
+
+    def update(self, x: float):
+        self.n += 1
+
+        # mean / variance
+        delta = x - self.mean
+        self.mean += delta / self.n
+        delta2 = x - self.mean
+        self.m2 += delta * delta2
+
+        # min / max
+        if x > self.max:
+            self.max = x
+        if x < self.min:
+            self.min = x
 
     @property
-    def screen_center(self) -> Vec2:
-        return Vec2(self.width // 2, self.height // 2)
+    def variance(self):
+        return self.m2 / self.n if self.n > 0 else 0.0
 
-    @overload
-    def to_screen(self, value: Vec2) -> Vec2: ...
-    @overload
-    def to_screen(self, value: float) -> float: ...
-    def to_screen(self, value: ScreenReturn) -> ScreenReturn:
-        if isinstance(value, Vec2):
-            # 将仿真坐标转换为屏幕坐标
-            x = self.screen_center.x + value.x * self.ppm
-            y = self.screen_center.y - value.y * self.ppm  # y轴翻转
-            return Vec2(x, y)
-        elif isinstance(value, (float, int)):
-            return value * self.ppm
+    @property
+    def std(self):
+        return self.variance**0.5
 
-    def to_sim(self, pos: Vec2) -> Vec2:
-        # 将屏幕坐标转换为仿真坐标
-        x = (pos.x - self.screen_center.x) / self.ppm
-        y = -(pos.y - self.screen_center.y) / self.ppm  # y轴翻转
-        return Vec2(x, y)
-
-    def update_screen_size(self, new_size: tuple[int, int]):
-        self.width, self.height = new_size
+    def print_stats(self):
+        print(
+            f"{self.mean:.4f}±{self.std:.4f}",
+            f"[{self.min:.4f}, {self.max:.4f}]",
+            f"(n={self.n})",
+        )
