@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import List
 
 import _pre_init
-import pretty_midi
 from manim import *  # pyright: ignore[reportWildcardImportFromLibrary]
 
 from src.models.manim import CollisionEvent, MetaData, SimulationRecord
@@ -36,10 +35,8 @@ with open(record_config.pkl_file, "rb") as f:
 meta = record.meta
 collisions = record.collisions
 
-config.pixel_width = 1080
-config.pixel_height = 1080
-config.frame_width = meta.boundary_radius * 2 * 1.15
-config.frame_height = meta.boundary_radius * 2 * 1.15
+config.frame_width = meta.boundary_radius * 2 * 1.2
+config.frame_height = meta.boundary_radius * 2 * 1.2
 
 
 def vec2_to_point(v):
@@ -55,6 +52,68 @@ class BouncingBallScene(Scene):
         self.wait(3)
 
 
+@dataclass
+class BallSegment:
+    t0: float
+    t1: float
+    p0: Vec2
+    v0: Vec2
+
+
+class PiecewiseTrajectory:
+    def __init__(
+        self,
+        p0: Vec2,
+        v0: Vec2,
+        a: Vec2,
+        collisions: List[CollisionEvent],
+    ):
+        self.p0 = p0
+        self.v0 = v0
+        self.a = a
+        self.collisions = collisions
+
+        # 预计算每一段的初始状态
+        self.segments: List[BallSegment] = []
+        self._build_segments()
+
+    def _build_segments(self):
+        self.segments.append(BallSegment(t0=0.0, t1=self.collisions[0].time, p0=self.p0, v0=self.v0))
+        for c in self.collisions:
+            self.segments[-1].t1 = c.time  # 外面固定先放进去一个，所以不用担心索引不存在
+            self.segments.append(
+                BallSegment(
+                    t0=c.time,
+                    t1=-1,
+                    p0=Vec2.from_tuple(c.position),
+                    v0=Vec2.from_tuple(c.velocity_after),
+                )
+            )
+
+    def position_at(self, t: float) -> np.ndarray:
+        for segment in self.segments:
+            if segment.t0 <= t <= segment.t1:
+                dt = t - segment.t0
+                return vec2_to_point(segment.p0 + segment.v0 * dt + 0.5 * self.a * dt * dt)
+
+        # 超出末尾
+        segment = self.segments[-1]
+        dt = segment.t1 - segment.t0
+        return vec2_to_point(segment.p0 + segment.v0 * dt + 0.5 * self.a * dt * dt)
+
+
+class BallMotionAnimation(Animation):
+    def __init__(self, ball: Mobject, trajectory: PiecewiseTrajectory, **kwargs):
+        self.trajectory = trajectory
+        self.total_time = trajectory.collisions[-1].time
+        super().__init__(ball, run_time=self.total_time, **kwargs)
+
+    def interpolate(self, alpha: float):
+        t = alpha * self.total_time
+        pos = self.trajectory.position_at(t)
+        self.mobject.move_to(pos)
+
+
 class BallSystem:
     def __init__(self, meta: MetaData, record_config: Config, collisions: List[CollisionEvent], scene: Scene):
         self.meta = meta
@@ -64,6 +123,12 @@ class BallSystem:
 
         self._build_boundary()
         self._build_ball()
+        self.trajectory = PiecewiseTrajectory(
+            Vec2.from_tuple(self.meta.ball_initial_pos),
+            Vec2.from_tuple(self.meta.ball_initial_vel),
+            Vec2.from_tuple(self.meta.ball_acc),
+            collisions,
+        )
 
     def _build_boundary(self):
         self.boundary = Circle(
@@ -84,105 +149,4 @@ class BallSystem:
         self.scene.add(self.ball)
 
     def play(self):
-        """
-        播放整个小球运动过程（按 collision 分段）
-        """
-        p0 = Vec2.from_tuple(self.meta.ball_initial_pos)
-        v0 = Vec2.from_tuple(self.meta.ball_initial_vel)
-        t_prev = 0.0
-
-        i = 0
-        current_session = []
-        final_session = []
-        duration = 0
-        ball_anime = None
-
-        while i < len(collisions):
-            collision = collisions[i]
-            if collision.is_note_event:
-                if not current_session:  # 第一段
-                    duration = 0
-                    ball_anime = None
-                else:  # 分到下一段
-                    ball_anime = Succession(*current_session)
-                    current_session.clear()
-
-            if ball_anime is None:  # 还在组织这段动画
-                dt = collision.time - t_prev
-                duration += dt
-                current_session.append(
-                    BallSegmentAnimation(
-                        ball=self.ball,
-                        p0=p0,
-                        v0=v0,
-                        a=self.acc,
-                        run_time=dt,
-                    )
-                )
-
-                p0 = Vec2.from_tuple(collision.position)
-                v0 = Vec2.from_tuple(collision.velocity_after)
-                t_prev = collision.time
-            else:
-                ripple_anime = self._make_ripple_animation(duration)
-                # self.scene.play(
-                #     AnimationGroup(
-                #         ball_anime,
-                #         # ripple_anime,
-                #         lag_ratio=0.0,
-                #     )
-                # )
-                final_session.append(AnimationGroup(ball_anime, ripple_anime))
-
-                i -= 1
-            i += 1
-        else:
-            if ball_anime is not None:
-                # ripple_anime = self._make_ripple_animation(duration)
-                # self.scene.play(
-                #     AnimationGroup(
-                #         ball_anime,
-                #         ripple_anime,
-                #         lag_ratio=0.0,
-                #     )
-                # )
-                final_session.append(ball_anime)
-
-            self.scene.play(Succession(*final_session))
-
-    def _make_ripple_animation(self, duration: float):
-        ripple = Circle(
-            radius=self.meta.boundary_radius,
-            color=RED,
-            stroke_width=3,
-        )
-        ripple.move_to(ORIGIN)
-        ripple_anim = AnimationGroup(
-            ripple.animate.scale(1.15).set_opacity(0),  # pyright: ignore[reportArgumentType]
-            run_time=duration,
-            lag_ratio=0.0,
-            rate_func=linear,
-        )
-
-        return ripple_anim
-
-
-class BallSegmentAnimation(Animation):
-    def __init__(
-        self,
-        ball: Mobject,
-        p0: Vec2,
-        v0: Vec2,
-        a: Vec2,
-        run_time: float,
-        **kwargs,
-    ):
-        super().__init__(ball, run_time=run_time, rate_func=linear, **kwargs)
-        self.p0 = p0
-        self.v0 = v0
-        self.a = a
-
-    def interpolate_mobject(self, alpha: float) -> None:
-        t = alpha * self.run_time
-        pos = self.p0 + self.v0 * t + 0.5 * self.a * t * t
-        self.mobject.move_to(vec2_to_point(pos))
+        self.scene.play(BallMotionAnimation(self.ball, self.trajectory))
