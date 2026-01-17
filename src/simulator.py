@@ -10,6 +10,7 @@ class Simulator:
     def __init__(self, ball: Ball, boundary: Boundary) -> None:
         self.time = 0
         self.ball = ball
+        self.ball_vel_before_collision = ball.vel
         self.boundary = boundary
         self.bounce_flag = False
 
@@ -69,6 +70,7 @@ class Simulator:
 
     def resolve_collision(self, override_e: float | None = None) -> None:
         """解析碰撞，修改小球速度"""
+        self.ball_vel_before_collision = self.ball.vel
         if self.boundary.is_colliding(self.ball):
             if not self.bounce_flag:  # 避免单次步进未离开反弹区域导致异常的多次反弹
                 self.ball.vel = self.boundary.reflect(self.ball, override_e=override_e)

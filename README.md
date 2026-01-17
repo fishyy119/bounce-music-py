@@ -2,6 +2,9 @@
 
 Python 3.12.7
 
+## Setup
+
+ffmpeg
 C:\tools\fluidsynth\bin
 sf2
 

@@ -36,7 +36,7 @@ def main(cfg: Config):
     simulator = Simulator(ball, boundary)
     dt = cfg.simulation.dt
 
-    midi = NoteRecord.from_midi_file(_pre_init.ASSETS_PATH / "midi" / cfg.music.midi)
+    midi = NoteRecord(_pre_init.ASSETS_PATH / "midi" / cfg.music.midi)
     iter_notes = PeekableIterator(midi.notes[cfg.music.inst_idx])
     res = SimulationRecord(
         meta=MetaData(
@@ -56,6 +56,9 @@ def main(cfg: Config):
     except StopIteration:
         print("Simulation completed.")
     finally:
+        res.meta.ball_final_vel = simulator.ball_vel_before_collision.as_tuple
+        res.meta.music_total_time = midi.duration
+        res.meta.prefix_free_time = res.collisions[0].time if res.collisions else 0.0
         print("Ball velocity statistics (m/s):", end=" ")
         stats_vel.print_stats()
         print("Collision error statistics (s):", end=" ")
@@ -90,8 +93,6 @@ def generate_bounce_record(
 
             last_has_note = has_note
             if last_has_note:
-                if abs(simulator.time - last_note_time) > 0.5:
-                    print(iter_notes.peek(), simulator.time)
                 stats_err.update(simulator.time - last_note_time)
 
             has_note = True

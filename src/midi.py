@@ -7,23 +7,22 @@ import numpy as np
 import pretty_midi
 import soundfile as sf
 
-# from midi2audio import FluidSynth
 from rich import print
 
 from .utils import ASSETS_PATH
 
 
 class NoteRecord:
-    def __init__(self, notes: List[List[float]], path: Path) -> None:
-        self.notes = notes
-        self.path = path
+    def __init__(self, midi_path: Path) -> None:
+        self.pm = pretty_midi.PrettyMIDI(midi_path)
+        self.notes = self._parse_notes()
+        self.path = midi_path
+        self.duration: float = self.pm.get_end_time()
 
-    @classmethod
-    def from_midi_file(cls, midi_path: Path) -> "NoteRecord":
-        pm = pretty_midi.PrettyMIDI(midi_path)
+    def _parse_notes(self) -> List[List[float]]:
         res: List[List[float]] = []
 
-        for inst in pm.instruments:
+        for inst in self.pm.instruments:
             start_times = sorted(float(n.start) for n in inst.notes)
             merged_times = []
 
@@ -35,7 +34,7 @@ class NoteRecord:
 
             res.append(merged_times)
 
-        return cls(notes=res, path=midi_path)
+        return res
 
 
 def midi_tracks_to_wav(
@@ -73,8 +72,6 @@ def midi_tracks_to_wav(
             raise IndexError(f"轨道索引 {idx} 超出范围，共 {len(midi_data.instruments)} 条轨道")
 
     audio = new_midi.fluidsynth(sf2_path=soundfont_path.as_posix(), fs=sr)
-    # fs = FluidSynth(sound_font=soundfont_path.as_posix())  # 指定 SoundFont
-    # fs.midi_to_audio(midi_path, wav_output_path)
 
     # 确保音频是 float32
     audio = np.float32(audio)
@@ -87,5 +84,5 @@ def midi_tracks_to_wav(
 
 
 if __name__ == "__main__":
-    note_record = NoteRecord.from_midi_file(ASSETS_PATH / "midi/春日影-My GO_爱给网_aigei_com.mid")
+    note_record = NoteRecord(ASSETS_PATH / "midi/春日影-My GO_爱给网_aigei_com.mid")
     print(note_record.notes[1])

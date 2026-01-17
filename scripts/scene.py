@@ -49,7 +49,8 @@ class BouncingBallScene(Scene):
     def construct(self):
         system = BallSystem(meta, record_config, collisions, self)
         system.play()
-        self.wait(3)
+        system.close()
+        self.wait(meta.music_total_time + meta.prefix_free_time - collisions[-1].time)
 
 
 @dataclass
@@ -150,3 +151,51 @@ class BallSystem:
 
     def play(self):
         self.scene.play(BallMotionAnimation(self.ball, self.trajectory))
+
+    def close(self, run_time: float = 2):
+        """让主球分裂成多个小球并逐渐消失"""
+
+        def sample_in_disc(radius: float) -> np.ndarray:
+            u = np.random.rand()
+            v = np.random.rand()
+            r = radius * np.sqrt(u)
+            theta = 2 * np.pi * v
+            return np.array([r * np.cos(theta), r * np.sin(theta), 0.0])
+
+        def tanh_cap(v, vmax):
+            s = np.linalg.norm(v)
+            if s < 1e-6:
+                return v
+            return v / s * vmax * np.tanh(s / vmax)
+
+        # 生成分裂小球
+        pieces: List[Mobject] = []
+        n_pieces = 8
+        R = self.ball.radius
+        piece_radius = R / (n_pieces**0.5)
+
+        for _ in range(n_pieces):
+            offset = sample_in_disc(R - piece_radius)
+            piece = Circle(radius=piece_radius, color=self.ball.get_color(), fill_opacity=1.0)
+            piece.move_to(self.ball.get_center() + offset)
+            self.scene.add(piece)
+            pieces.append(piece)
+
+        # 隐藏原球
+        self.ball.set_opacity(0.0)
+
+        # 随机方向和速度
+        vel_ball = vec2_to_point(self.meta.ball_final_vel)
+        vel_ball = tanh_cap(vel_ball, self.boundary.radius / 1.5)
+        angles = np.random.uniform(0, 2 * np.pi, n_pieces)
+        speeds = np.random.uniform(0.5, 1.5, n_pieces)
+        velocities = [vel_ball + np.array([np.cos(a), np.sin(a), 0]) * s for a, s in zip(angles, speeds)]
+
+        # 播放动画
+        self.scene.play(
+            *[
+                piece.animate.move_to(piece.get_center() + vel).set_opacity(0.0)
+                for piece, vel in zip(pieces, velocities)
+            ],
+            run_time=run_time
+        )

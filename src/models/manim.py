@@ -14,6 +14,9 @@ class MetaData:
     dt: float
     midi_file: str
     inst_idx: int
+    ball_final_vel: Vec2 = (0.0, 0.0)
+    prefix_free_time: float = 0.0
+    music_total_time: float = 0.0
 
 
 # --------------------
