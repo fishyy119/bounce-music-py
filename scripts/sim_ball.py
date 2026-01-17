@@ -1,6 +1,6 @@
 import pickle
 from pathlib import Path
-from typing import Iterator, List
+from typing import List
 
 import _pre_init
 import hydra
@@ -14,7 +14,10 @@ from src.boundary import CircleBoundary
 from src.midi import NoteRecord
 from src.models import CollisionEvent, Config, MetaData, SimulationRecord
 from src.simulator import Simulator
-from src.utils import OnlineStats, Vec2
+from src.utils import OnlineStats, PeekableIterator, Vec2
+
+stats_vel = OnlineStats()
+stats_err = OnlineStats()
 
 
 @hydra.main(version_base=None, config_path=(_pre_init.ASSETS_PATH / "conf").as_posix(), config_name="config")
@@ -34,7 +37,7 @@ def main(cfg: Config):
     dt = cfg.simulation.dt
 
     midi = NoteRecord.from_midi_file(_pre_init.ASSETS_PATH / "midi" / cfg.music.midi)
-    iter_notes = iter(midi.notes[cfg.music.inst_idx])
+    iter_notes = PeekableIterator(midi.notes[cfg.music.inst_idx])
     res = SimulationRecord(
         meta=MetaData(
             ball_radius=ball.radius,
@@ -47,15 +50,16 @@ def main(cfg: Config):
             inst_idx=cfg.music.inst_idx,
         )
     )
-    stats = OnlineStats()
 
     try:
-        generate_bounce_record(simulator, dt, iter_notes, res, stats)
+        generate_bounce_record(simulator, dt, iter_notes, res)
     except StopIteration:
         print("Simulation completed.")
     finally:
         print("Ball velocity statistics (m/s):", end=" ")
-        stats.print_stats()
+        stats_vel.print_stats()
+        print("Collision error statistics (s):", end=" ")
+        stats_err.print_stats()
         print(f"Non-note collision: {len([c for c in res.collisions if not c.is_note_event])}/{len(res.collisions)}")
         output_path = Path(HydraConfig.get().runtime.output_dir) / "bounce_history.pkl"
         with open(output_path, "wb") as f:
@@ -66,14 +70,15 @@ def main(cfg: Config):
 def generate_bounce_record(
     simulator: Simulator,
     dt: float,
-    iter_notes: Iterator[float],
+    iter_notes: PeekableIterator[float],
     res: SimulationRecord,
-    stats: OnlineStats | None = None,
 ):
     e_history: List[Float[np.ndarray, "n"]] = []
     is_init = False
     running = True
     free_time = 0
+    has_note = False
+    last_note_time = 0.0
     while running:
         if simulator.step(dt):
             if not is_init:  # 将自由下落后第一次碰撞视作时间起点
@@ -81,7 +86,13 @@ def generate_bounce_record(
                 simulator.reset_time()
                 is_init = True
 
-            desired_duration = next(iter_notes) - simulator.time
+            desired_duration = iter_notes.peek() - simulator.time
+
+            last_has_note = has_note
+            if last_has_note:
+                if abs(simulator.time - last_note_time) > 0.5:
+                    print(iter_notes.peek(), simulator.time)
+                stats_err.update(simulator.time - last_note_time)
 
             has_note = True
             while True:
@@ -104,11 +115,15 @@ def generate_bounce_record(
                     time=simulator.time + free_time,
                     position=simulator.ball.pos.as_tuple,
                     velocity_after=simulator.ball.vel.as_tuple,
-                    is_note_event=has_note,
+                    is_note_event=last_has_note,
                 )
             )
 
-        stats.update(simulator.ball.vel.vec_len()) if stats else None
+            if has_note:
+                last_note_time = iter_notes.peek()
+                iter_notes.consume()
+
+        stats_vel.update(simulator.ball.vel.vec_len())
 
 
 if __name__ == "__main__":

@@ -44,7 +44,7 @@ def midi_tracks_to_wav(
     wav_output_path: Path,
     sr: int = 44100,
     soundfont_path: Path = ASSETS_PATH / "sf2/FluidR3_GM.sf2",
-) -> None:
+) -> Path:
     """
     从 MIDI 文件提取指定轨道，生成 WAV 文件。
 
@@ -55,10 +55,10 @@ def midi_tracks_to_wav(
         fs (int): 采样率，默认 44100
         soundfont_path (str): 可选 SoundFont 文件路径，如果 None 使用默认
     """
-    wav_output_path = wav_output_path / (midi_path.stem + "_" + "_".join(str(i) for i in track_indices) + ".wav")
+    wav_output_path = wav_output_path / (midi_path.stem + "-" + "-".join(str(i) for i in track_indices) + ".wav")
     wav_output_path.parent.mkdir(parents=True, exist_ok=True)
     if wav_output_path.exists():
-        return
+        return wav_output_path
 
     # 读取 MIDI
     midi_data = pretty_midi.PrettyMIDI(midi_path)
@@ -83,8 +83,9 @@ def midi_tracks_to_wav(
     sf.write(wav_output_path, audio, sr)
 
     print(f"WAV 文件已生成: {wav_output_path}")
+    return wav_output_path
 
 
 if __name__ == "__main__":
     note_record = NoteRecord.from_midi_file(ASSETS_PATH / "midi/春日影-My GO_爱给网_aigei_com.mid")
-    print(note_record.notes[0])
+    print(note_record.notes[1])

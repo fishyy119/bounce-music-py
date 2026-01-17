@@ -1,7 +1,18 @@
 from dataclasses import dataclass
 from math import hypot
 from pathlib import Path
-from typing import List, Protocol, Sequence, Tuple, overload
+from typing import (
+    Generic,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Protocol,
+    Sequence,
+    Tuple,
+    TypeVar,
+    overload,
+)
 
 from rich import print
 
@@ -102,3 +113,21 @@ class OnlineStats:
             f"[{self.min:.4f}, {self.max:.4f}]",
             f"(n={self.n})",
         )
+
+
+T = TypeVar("T")
+
+
+class PeekableIterator(Generic[T]):
+    def __init__(self, iterable: Iterable[T]):
+        self._it: Iterator[T] = iter(iterable)
+        self._cache: Optional[T] = None
+
+    def peek(self) -> T:
+        if self._cache is None:
+            self._cache = next(self._it)
+        return self._cache
+
+    def consume(self) -> None:
+        if self._cache is not None:
+            self._cache = None

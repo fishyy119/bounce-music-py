@@ -7,12 +7,10 @@ from .utils import Vec2
 
 
 class Simulator:
-    def __init__(self, ball: Ball, boundary: Boundary, gravity: float = 9.81) -> None:
+    def __init__(self, ball: Ball, boundary: Boundary) -> None:
         self.time = 0
         self.ball = ball
         self.boundary = boundary
-        self.g = gravity
-        self.ball.acc = Vec2(0, -self.g)  # 设置重力加速度
         self.bounce_flag = False
 
     def reset_time(self) -> None:
@@ -34,9 +32,9 @@ class Simulator:
 
         pos = self.ball.pos  # 当前位置（碰撞点）
         vel = self.ball.vel  # 当前速度（碰撞前）
+        acc = self.ball.acc
         norm = self.boundary.get_normal(pos)  # 碰撞点外法向方向
 
-        acc = Vec2(0, -self.g)  # 重力加速度
         r_f = pos + vel * t_f + 0.5 * acc * t_f**2
         A = t_f**2
         B = 2 * t_f * r_f.dot(norm)

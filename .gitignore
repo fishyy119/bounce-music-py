@@ -1,6 +1,8 @@
 temp*
 outcmaes
 outputs/*
+manim-videos/*
+final_videos/*
 media/*
 **/config.tmp.json
 *.sf2

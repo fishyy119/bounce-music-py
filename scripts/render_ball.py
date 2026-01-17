@@ -2,6 +2,7 @@
 import argparse
 import json
 import pickle
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -26,7 +27,7 @@ def find_latest_pkl() -> Path:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-i", "--input", type=Path, help="Path to the input video file")
+    parser.add_argument("-i", "--input", type=Path, help="Path to the input pkl file")
     parser.add_argument("--ball_color", type=str, default="BLUE")
     parser.add_argument("--border_color", type=str, default="GREY")
     parser.add_argument("--size", type=int, default=960, help="Pixel size of the rendered video")
@@ -54,6 +55,7 @@ if __name__ == "__main__":
         / f"{args.size}p{args.fps}.mp4"
     )
     output_file.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(pkl_file, output_file.with_suffix(".pkl"))
 
     manim_cmd = (
         [
