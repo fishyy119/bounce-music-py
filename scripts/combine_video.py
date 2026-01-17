@@ -64,24 +64,46 @@ if __name__ == "__main__":
             records.append(record)
 
     wav_path = midi_tracks_to_wav(midi_file, args.tracks, wav_output_path=_pre_init.ASSETS_PATH / "wav")
+    final_video_path = FINAL_PATH / f"{midi_file.stem}-{'-'.join(str(t) for t in args.tracks)}-{video_quality}.mp4"
 
-    record = records[0]
-    print(record.collisions[0].time)
-    offset_ms = int(record.collisions[0].time * 1000)
+    offsets = [int(r.collisions[0].time * 1000) for r in records]
+    print(offsets)
+    audio_offset_ms = max(offsets)
+    video_delays_sec = [(audio_offset_ms - o) / 1000 for o in offsets]
 
-    ffmpeg_cmd = (
-        ["ffmpeg"]
-        + ["-i", videos[0].as_posix()]
-        + ["-i", wav_path.as_posix()]
-        + ["-filter_complex", f"[1:a]adelay={offset_ms}[a1]"]
-        + ["-map", "0:v", "-map", "[a1]"]
-        + ["-c:v", "copy", "-c:a", "aac"]
-        + ["-strict", "experimental"]
-        + [
-            (FINAL_PATH / f"{midi_file.stem}-{'-'.join(str(t) for t in args.tracks)}-{video_quality}.mp4").as_posix(),
-            "-y",
-        ]
-    )
+    match len(videos):
+        case 1:
+            ffmpeg_cmd = (
+                ["ffmpeg"]
+                + ["-i", videos[0].as_posix()]
+                + ["-i", wav_path.as_posix()]
+                + ["-filter_complex", f"[1:a]adelay={audio_offset_ms}[aout]"]
+                + ["-map", "0:v", "-map", "[aout]"]
+                + ["-c:v", "copy", "-c:a", "aac"]
+                + ["-strict", "experimental"]
+                + [final_video_path.as_posix(), "-y"]
+            )
+        case 2:
+            filter_complex = (  # 没有逗号，隐式拼接
+                f"[0:v]tpad=start_duration={video_delays_sec[0]}[v0];"
+                f"[1:v]tpad=start_duration={video_delays_sec[1]}[v1];"
+                f"[v0][v1]hstack=inputs=2[vout];"
+                f"[2:a]adelay={audio_offset_ms}[aout]"
+            )
+
+            ffmpeg_cmd = (
+                ["ffmpeg"]
+                + ["-i", videos[0].as_posix()]
+                + ["-i", videos[1].as_posix()]
+                + ["-i", wav_path.as_posix()]
+                + ["-filter_complex", filter_complex]
+                + ["-map", "[vout]", "-map", "[aout]"]
+                + ["-c:v", "libx264", "-c:a", "aac"]
+                + ["-strict", "experimental"]
+                + [final_video_path.as_posix(), "-y"]
+            )
+        case _:
+            raise NotImplementedError(f"Combining {len(videos)} tracks is not implemented yet.")
 
     print(f"Running command: '{" ".join(ffmpeg_cmd)}'")
     subprocess.run(ffmpeg_cmd)

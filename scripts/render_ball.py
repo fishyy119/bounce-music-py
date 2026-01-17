@@ -12,6 +12,8 @@ from rich import print
 
 from src.models.manim import SimulationRecord
 
+SCENE_SCRIPT = _pre_init.PROJECT_ROOT / "scripts/scene.py"
+
 
 def find_latest_pkl() -> Path:
     outputs = _pre_init.PROJECT_ROOT / "outputs"
@@ -55,14 +57,14 @@ if __name__ == "__main__":
         / f"{args.size}p{args.fps}.mp4"
     )
     output_file.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(pkl_file, output_file.with_suffix(".pkl"))
+    if pkl_file.resolve() == output_file.with_suffix(".pkl").resolve():
+        pass
+    else:
+        shutil.copy2(pkl_file, output_file.with_suffix(".pkl"))
 
     manim_cmd = (
-        [
-            "manim",
-            (_pre_init.PROJECT_ROOT / "scripts/scene.py").as_posix(),
-            "BouncingBallScene",
-        ]
+        ["manim"]
+        + [SCENE_SCRIPT.as_posix(), "BouncingBallScene"]
         + unknown
         + ["--resolution", f"{args.size},{args.size}"]
         + ["--fps", str(args.fps)]
