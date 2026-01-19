@@ -46,6 +46,7 @@ def parse_manim_folder(midi_file: Path, tracks: List[int]) -> str:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-m", "--music", type=str, required=True, help="Midi filename (without suffix)")
+    parser.add_argument("-s", "--soundfont", type=Path, default=None, help="SoundFont file path")
     parser.add_argument(
         "-t", "--tracks", type=int, nargs="+", default=[0], help="List of MIDI tracks to use (default: [0])"
     )
@@ -63,7 +64,9 @@ if __name__ == "__main__":
             record: SimulationRecord = pickle.load(f)
             records.append(record)
 
-    wav_path = midi_tracks_to_wav(midi_file, args.tracks, wav_output_path=_pre_init.ASSETS_PATH / "wav")
+    wav_path = midi_tracks_to_wav(
+        midi_file, args.tracks, wav_output_path=_pre_init.ASSETS_PATH / "wav", soundfont_path=args.soundfont
+    )
     final_video_path = FINAL_PATH / f"{midi_file.stem}-{'-'.join(str(t) for t in args.tracks)}-{video_quality}.mp4"
 
     offsets = [int(r.collisions[0].time * 1000) for r in records]

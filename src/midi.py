@@ -6,10 +6,9 @@ from typing import List
 import numpy as np
 import pretty_midi
 import soundfile as sf
-
 from rich import print
 
-from .utils import ASSETS_PATH
+from .utils import ASSETS_PATH, get_default_sf2_file
 
 
 class NoteRecord:
@@ -42,18 +41,19 @@ def midi_tracks_to_wav(
     track_indices: List[int],
     wav_output_path: Path,
     sr: int = 44100,
-    soundfont_path: Path = ASSETS_PATH / "sf2/FluidR3_GM.sf2",
+    soundfont_path: Path | None = None,
 ) -> Path:
     """
     从 MIDI 文件提取指定轨道，生成 WAV 文件。
 
     Args:
-        midi_path (str): 输入 MIDI 文件路径
+        midi_path (Path): 输入 MIDI 文件路径
         track_indices (List[int]): 希望保留的轨道索引列表
-        wav_output_path (str): 输出 WAV 文件路径
+        wav_output_path (Path): 输出 WAV 文件路径
         fs (int): 采样率，默认 44100
-        soundfont_path (str): 可选 SoundFont 文件路径，如果 None 使用默认
+        soundfont_path (Path | None): 可选 SoundFont 文件路径，如果 None 使用默认
     """
+    soundfont_path = get_default_sf2_file() if soundfont_path is None else soundfont_path
     wav_output_path = wav_output_path / (midi_path.stem + "-" + "-".join(str(i) for i in track_indices) + ".wav")
     wav_output_path.parent.mkdir(parents=True, exist_ok=True)
     if wav_output_path.exists():
