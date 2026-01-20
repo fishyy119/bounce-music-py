@@ -1,6 +1,6 @@
 import pickle
 from pathlib import Path
-from typing import List
+from typing import List, cast
 
 import _pre_init
 import hydra
@@ -10,11 +10,12 @@ from jaxtyping import Float
 from rich import print
 
 from src.body import Ball
-from src.boundary import CircleBoundary
+from src.boundary import CircleBoundary, EllipseBoundary
 from src.midi import NoteRecord
 from src.models import CollisionEvent, Config, MetaData, SimulationRecord
+from src.models.hydra import CircleConfig, EllipseConfig
 from src.simulator import Simulator
-from src.utils import OnlineStats, PeekableIterator, Vec2
+from src.utils.usable_class import OnlineStats, PeekableIterator, Vec2
 
 stats_vel = OnlineStats()
 stats_err = OnlineStats()
@@ -28,11 +29,25 @@ def main(cfg: Config):
         acc=Vec2.from_hydra(cfg.ball.acc),
         radius=cfg.ball.radius,
     )
-    boundary = CircleBoundary(
-        center=Vec2.from_hydra(cfg.boundary.center),
-        radius=cfg.boundary.radius,
-        restitution=cfg.boundary.restitution,
-    )
+    match cfg.boundary.type:
+        case "circle":
+            cfg.boundary = cast(CircleConfig, cfg.boundary)
+            boundary = CircleBoundary(
+                center=Vec2(0, 0),
+                radius=cfg.boundary.radius,
+                restitution=cfg.boundary.restitution,
+            )
+        case "ellipse":
+            cfg.boundary = cast(EllipseConfig, cfg.boundary)
+            boundary = EllipseBoundary.from_ab(
+                center=Vec2(0, 0),
+                a=cfg.boundary.a,
+                b=cfg.boundary.b,
+                restitution=cfg.boundary.restitution,
+            )
+        case _:
+            raise ValueError(f"Unknown boundary type: {cfg.boundary.type}")
+
     simulator = Simulator(ball, boundary)
     dt = cfg.simulation.dt
 
@@ -40,11 +55,8 @@ def main(cfg: Config):
     iter_notes = PeekableIterator(midi.notes[cfg.music.inst_idx])
     res = SimulationRecord(
         meta=MetaData(
-            ball_radius=ball.radius,
-            ball_initial_pos=ball.pos.as_tuple,
-            ball_initial_vel=ball.vel.as_tuple,
-            ball_acc=ball.acc.as_tuple,
-            boundary_radius=boundary.radius,
+            ball=ball.to_manim_meta(),
+            boundary=boundary.to_manim_meta(),
             dt=dt,
             midi_file=midi.path.as_posix(),
             inst_idx=cfg.music.inst_idx,
@@ -56,7 +68,7 @@ def main(cfg: Config):
     except StopIteration:
         print("Simulation completed.")
     finally:
-        res.meta.ball_final_vel = simulator.ball_vel_before_collision.as_tuple
+        res.meta.ball.final_vel = simulator.ball_vel_before_collision.as_tuple
         res.meta.music_total_time = midi.duration
         res.meta.prefix_free_time = res.collisions[0].time if res.collisions else 0.0
         print("Ball velocity statistics (m/s):", end=" ")
@@ -97,7 +109,12 @@ def generate_bounce_record(
 
             has_note = True
             while True:
-                desired_e = simulator.calc_desired_restitution(desired_duration)
+                desired_e = simulator.boundary.calc_desired_restitution(
+                    desired_duration,
+                    simulator.ball.pos,
+                    simulator.ball.vel,
+                    simulator.ball.acc,
+                )
                 if desired_e is not None:
                     break
                 elif desired_duration > 0.1:
@@ -110,7 +127,7 @@ def generate_bounce_record(
             desired_e = desired_e[desired_e_another.argsort()]
             e_history.append(desired_e)
 
-            simulator.resolve_collision(override_e=desired_e[0])
+            simulator.resolve_collision(override_e=desired_e[0].item())
             res.collisions.append(
                 CollisionEvent(
                     time=simulator.time + free_time,

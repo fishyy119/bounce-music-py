@@ -1,9 +1,6 @@
-import numpy as np
-from jaxtyping import Float
-
 from .body import Ball
 from .boundary import Boundary, CircleBoundary
-from .utils import Vec2
+from .utils.usable_class import Vec2
 
 
 class Simulator:
@@ -17,38 +14,6 @@ class Simulator:
     def reset_time(self) -> None:
         """第一段下落是不可控的，所以需要将第一次反弹视作时间起点"""
         self.time = 0
-
-    def calc_desired_restitution(self, t_f: float) -> Float[np.ndarray, "n"] | None:
-        """
-        根据期望的时间，计算期望恢复系数，输入反弹前速度vel与外法向norm
-
-        Args:
-            t_f (float): 期望时间
-
-        Returns:
-            float | None: 解析求解得到的期望恢复系数
-        """
-        if not isinstance(self.boundary, CircleBoundary):
-            raise NotImplementedError
-
-        pos = self.ball.pos  # 当前位置（碰撞点）
-        vel = self.ball.vel  # 当前速度（碰撞前）
-        acc = self.ball.acc
-        norm = self.boundary.get_normal(pos)  # 碰撞点外法向方向
-
-        r_f = pos + vel * t_f + 0.5 * acc * t_f**2
-        A = t_f**2
-        B = 2 * t_f * r_f.dot(norm)
-        C = r_f.dot(r_f) - (self.boundary.radius - self.ball.radius) ** 2
-
-        roots = np.roots([A, B, C])  # 返回所有复数根
-        real_roots = roots[np.isreal(roots)].real  # 保持为np数组，只取实根
-
-        # 理论公式：k = -(1+e)*vel.dot(norm)
-        k = real_roots / (-vel.dot(norm)) - 1
-        k = k[k > 0]  # 只保留正值
-
-        return k if len(k) > 0 else None
 
     def step(self, dt: float) -> bool:
         """

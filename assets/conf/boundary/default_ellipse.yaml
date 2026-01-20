@@ -1,0 +1,6 @@
+defaults:
+  - ellipse_schema
+
+type: ellipse
+a: 5.4
+b: 5.4

@@ -4,6 +4,6 @@ simulation:
 defaults:
   - base_config
   - ball: default_ball
-  - boundary: default_boundary
+  - boundary: default_circle
   - music: haru_hikage
   - _self_

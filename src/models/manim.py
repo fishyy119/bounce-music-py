@@ -5,16 +5,32 @@ Vec2 = Tuple[float, float]
 
 
 @dataclass
+class MetaBall:
+    radius: float
+    initial_pos: Vec2
+    initial_vel: Vec2
+    acc: Vec2
+    final_vel: Vec2 = (0.0, 0.0)
+
+
+@dataclass
+class MetaEllipse:
+    Q11: float
+    Q12: float
+    Q21: float
+    Q22: float
+
+    def __post_init__(self):
+        self.type = "ellipse"
+
+
+@dataclass
 class MetaData:
-    ball_radius: float
-    ball_initial_pos: Vec2
-    ball_initial_vel: Vec2
-    ball_acc: Vec2
-    boundary_radius: float
+    ball: MetaBall
+    boundary: MetaEllipse
     dt: float
     midi_file: str
     inst_idx: int
-    ball_final_vel: Vec2 = (0.0, 0.0)
     prefix_free_time: float = 0.0
     music_total_time: float = 0.0
 

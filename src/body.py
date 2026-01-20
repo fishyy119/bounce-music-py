@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
-from .utils import Vec2
+from .models.manim import MetaBall
+from .utils.usable_class import Vec2
 
 
 @dataclass
@@ -20,3 +21,11 @@ class Ball:
 
         self.last_pos = self.pos
         self.pos = next_pos
+
+    def to_manim_meta(self) -> MetaBall:
+        return MetaBall(
+            radius=self.radius,
+            initial_pos=self.pos.as_tuple,
+            initial_vel=self.vel.as_tuple,
+            acc=self.acc.as_tuple,
+        )

@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from math import hypot
 from pathlib import Path
 from typing import (
+    Any,
     Generic,
     Iterable,
     Iterator,
@@ -14,6 +15,8 @@ from typing import (
     overload,
 )
 
+import numpy as np
+from jaxtyping import Float
 from rich import print
 
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -32,6 +35,9 @@ class XYProtocol(Protocol):
     y: float
 
 
+Mat2 = Float[np.ndarray, "2 2"]
+
+
 @dataclass
 class Vec2:
     x: float
@@ -48,6 +54,15 @@ class Vec2:
     @classmethod
     def from_tuple(cls, data: Sequence[float]) -> "Vec2":
         return cls(x=data[0], y=data[1])
+
+    @classmethod
+    def from_numpy(cls, arr: Float[np.ndarray, "2"]) -> "Vec2":
+        arr = np.asarray(arr)
+        return cls(float(arr[0]), float(arr[1]))
+
+    def __array__(self, dtype: Any = None) -> Float[np.ndarray, "2"]:
+        # 用于支持numpy的各种函数与矩阵运算
+        return np.array([self.x, self.y], dtype=dtype)
 
     @overload
     def __getitem__(self, index: int) -> float: ...

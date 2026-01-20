@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 
 from hydra.core.config_store import ConfigStore
+from omegaconf import MISSING
 
-from ..utils import Vec2
+from ..utils.usable_class import Vec2
 
 
 @dataclass
@@ -15,9 +16,21 @@ class BallConfig:
 
 @dataclass
 class BoundaryConfig:
-    center: Vec2
-    radius: float
-    restitution: float
+    type: str = MISSING
+    restitution: float = 1
+
+
+@dataclass
+class CircleConfig(BoundaryConfig):
+    type: str = "circle"
+    radius: float = MISSING
+
+
+@dataclass
+class EllipseConfig(BoundaryConfig):
+    type: str = "ellipse"
+    a: float = MISSING
+    b: float = MISSING
 
 
 @dataclass
@@ -42,5 +55,6 @@ class Config:
 cs = ConfigStore.instance()
 cs.store(name="base_config", node=Config)
 cs.store(group="ball", name="ball_schema", node=BallConfig)
-cs.store(group="boundary", name="boundary_schema", node=BoundaryConfig)
+cs.store(group="boundary", name="circle_schema", node=CircleConfig)
+cs.store(group="boundary", name="ellipse_schema", node=EllipseConfig)
 cs.store(group="music", name="music_schema", node=MusicConfig)

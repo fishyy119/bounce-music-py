@@ -1,0 +1,5 @@
+defaults:
+  - circle_schema
+
+type: circle
+radius: 5.5

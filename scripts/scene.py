@@ -3,13 +3,14 @@ import json
 import pickle
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List
+from typing import List, cast
 
 import _pre_init
 from manim import *  # pyright: ignore[reportWildcardImportFromLibrary]
 
-from src.models.manim import CollisionEvent, MetaData, SimulationRecord
-from src.utils import Vec2
+from src.boundary import EllipseBoundary
+from src.models.manim import CollisionEvent, MetaData, MetaEllipse, SimulationRecord
+from src.utils.usable_class import Vec2
 
 
 @dataclass
@@ -35,8 +36,15 @@ with open(record_config.pkl_file, "rb") as f:
 meta = record.meta
 collisions = record.collisions
 
-config.frame_width = meta.boundary_radius * 2 * 1.2
-config.frame_height = meta.boundary_radius * 2 * 1.2
+match meta.boundary.type:
+    case "ellipse":
+        meta.boundary = cast(MetaEllipse, meta.boundary)
+        boundary = EllipseBoundary.from_manim_meta(meta.boundary)
+        w, h = boundary.calc_manim_wh()
+        config.frame_height = h
+        config.frame_width = w
+    case _:
+        raise ValueError(f"Unknown boundary type: {meta.boundary.type}")
 
 
 def vec2_to_point(v):
@@ -125,28 +133,25 @@ class BallSystem:
         self._build_boundary()
         self._build_ball()
         self.trajectory = PiecewiseTrajectory(
-            Vec2.from_tuple(self.meta.ball_initial_pos),
-            Vec2.from_tuple(self.meta.ball_initial_vel),
-            Vec2.from_tuple(self.meta.ball_acc),
+            Vec2.from_tuple(self.meta.ball.initial_pos),
+            Vec2.from_tuple(self.meta.ball.initial_vel),
+            Vec2.from_tuple(self.meta.ball.acc),
             collisions,
         )
 
     def _build_boundary(self):
-        self.boundary = Circle(
-            radius=self.meta.boundary_radius,
-            color=self.config.border_color,
-        )
+        self.boundary = boundary.to_manim_object(self.meta.ball.radius, color=self.config.border_color)
         self.scene.add(self.boundary)
 
     def _build_ball(self):
-        self.acc = Vec2.from_tuple(self.meta.ball_acc)
+        self.acc = Vec2.from_tuple(self.meta.ball.acc)
 
         self.ball = Circle(
-            radius=self.meta.ball_radius,
+            radius=self.meta.ball.radius,
             color=self.config.ball_color,
             fill_opacity=1.0,
         )
-        self.ball.move_to(vec2_to_point(self.meta.ball_initial_pos))
+        self.ball.move_to(vec2_to_point(self.meta.ball.initial_pos))
         self.scene.add(self.ball)
 
     def play(self):
@@ -185,8 +190,8 @@ class BallSystem:
         self.ball.set_opacity(0.0)
 
         # 随机方向和速度
-        vel_ball = vec2_to_point(self.meta.ball_final_vel)
-        vel_ball = tanh_cap(vel_ball, self.boundary.radius / 1.5)
+        vel_ball = vec2_to_point(self.meta.ball.final_vel)
+        vel_ball = tanh_cap(vel_ball, min(config.frame_height, config.frame_width) / 3)
         angles = np.random.uniform(0, 2 * np.pi, n_pieces)
         speeds = np.random.uniform(0.5, 1.5, n_pieces)
         velocities = [vel_ball + np.array([np.cos(a), np.sin(a), 0]) * s for a, s in zip(angles, speeds)]
@@ -197,5 +202,5 @@ class BallSystem:
                 piece.animate.move_to(piece.get_center() + vel).set_opacity(0.0)
                 for piece, vel in zip(pieces, velocities)
             ],
-            run_time=run_time
+            run_time=run_time,
         )
