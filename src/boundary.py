@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Tuple
+from typing import List, Tuple
 
 import numpy as np
 from jaxtyping import Float
@@ -89,9 +89,25 @@ class EllipseBoundary(Boundary):
 
         # 理论公式：k = -(1+e)*vel.dot(norm)
         k = real_roots / (-vel.dot(norm)) - 1
-        k = k[k > 0]  # 只保留正值
 
-        return k if len(k) > 0 else None
+        # * 验证环节
+        k = k[k > 0]  # 只保留正值
+        valid_k: List[float] = []  # 用列表收集合法恢复系数
+        # 运动过程需满足不等式约束
+        ball_tmp = Ball(pos=pos, vel=vel, acc=acc)
+        t_samples = np.linspace(0, t_f, 300)
+        for e in k:
+            vel_after = self.reflect(ball_tmp, override_e=e.item())
+            p_samples = (
+                np.asarray(pos)
+                + np.asarray(vel_after) * t_samples[:, None]
+                + 0.5 * np.asarray(acc) * t_samples[:, None] ** 2
+            )
+            constraint_vals = np.einsum("ni,ij,nj->n", p_samples, self.Q, p_samples)
+            if np.all(constraint_vals <= 1 + 2e-1):  #! 容限不能太小，因为数值递推就是会稍微超出
+                valid_k.append(e)  # 只保留满足全程约束的 e
+
+        return np.array(valid_k) if valid_k else None
 
     def to_manim_meta(self) -> MetaEllipse:
         return MetaEllipse(

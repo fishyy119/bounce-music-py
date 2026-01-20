@@ -8,7 +8,7 @@ import pretty_midi
 import soundfile as sf
 from rich import print
 
-from .utils.usable_class import ASSETS_PATH, get_default_sf2_file
+from .utils import ASSETS_PATH, get_default_sf2_file
 
 
 class NoteRecord:

@@ -7,7 +7,7 @@ from skimage import measure
 from .usable_class import Vec2
 
 
-def ellipse_boundary_to_manim(Q: np.ndarray, center: Vec2, ball_r: float, grid_res: int = 400, **kwargs) -> VMobject:
+def ellipse_boundary_to_manim(Q: np.ndarray, center: Vec2, ball_r: float, grid_res: int = 2000, **kwargs) -> VMobject:
     """
     将二次型椭圆均匀膨胀 ball_r，返回 Manim VMobject
 

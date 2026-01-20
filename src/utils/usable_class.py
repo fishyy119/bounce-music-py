@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from math import hypot
-from pathlib import Path
 from typing import (
     Any,
     Generic,
@@ -18,16 +17,6 @@ from typing import (
 import numpy as np
 from jaxtyping import Float
 from rich import print
-
-PROJECT_ROOT = Path(__file__).parent.parent
-ASSETS_PATH = PROJECT_ROOT / "assets"
-
-
-def get_default_sf2_file() -> Path:
-    sf2_files = list((ASSETS_PATH / "sf2").glob("*.sf2"))
-    if not sf2_files:
-        raise FileNotFoundError("No .sf2 files found in the sf2 directory.")
-    return sf2_files[0]
 
 
 class XYProtocol(Protocol):
