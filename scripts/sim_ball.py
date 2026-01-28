@@ -38,6 +38,10 @@ def main(cfg: Config):
                 restitution=cfg.boundary.restitution,
             )
         case "ellipse":
+            print(
+                "[bold yellow][WARN][/bold yellow]",
+                "[yellow]The results of elliptical boundary may not be optimal.[/yellow]",
+            )
             cfg.boundary = cast(EllipseConfig, cfg.boundary)
             boundary = EllipseBoundary.from_ab(
                 center=Vec2(0, 0),

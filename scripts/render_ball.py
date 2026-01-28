@@ -1,4 +1,7 @@
 # pyright: standard
+"""
+调用 Manim 进行视频渲染，内存占用方面可能表现不佳
+"""
 import argparse
 import json
 import pickle
@@ -12,7 +15,7 @@ from rich import print
 
 from src.models.manim import SimulationRecord
 
-SCENE_SCRIPT = _pre_init.PROJECT_ROOT / "scripts/scene.py"
+SCENE_SCRIPT = _pre_init.PROJECT_ROOT / "scripts/manim_scene.py"
 
 
 def find_latest_pkl() -> Path:
