@@ -6,6 +6,10 @@ Python 3.12.7
 
 *Sample demo: This video shows the simulated ball motion synchronized with audio (file: [assets/example.mp4](assets/example.mp4)).*
 
+
+https://github.com/user-attachments/assets/c6526d84-623b-481a-a3f1-d781043b0ae8
+
+
 ## Setup
 
 ### 0. Non-Python Dependencies
