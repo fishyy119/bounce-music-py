@@ -2,8 +2,6 @@
 
 Python 3.12.7
 
-## Example
-
 <video src="assets/example.mp4" autoplay controls width="600"></video>
 
 *Sample demo: This video shows the simulated ball motion synchronized with audio (file: [assets/example.mp4](assets/example.mp4)).*
