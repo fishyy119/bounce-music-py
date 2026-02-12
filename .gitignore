@@ -9,6 +9,8 @@ media/*
 *.mp4
 *.wav
 
+!assets/example.mp4
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
