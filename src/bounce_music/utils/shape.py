@@ -1,4 +1,6 @@
 # pyright: standard
+"""Geometry helpers for Manim objects."""
+
 import numpy as np
 from manim import VMobject
 from scipy.ndimage import binary_dilation

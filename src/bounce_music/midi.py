@@ -1,14 +1,13 @@
 # pyright: standard
+"""MIDI parsing and audio rendering helpers."""
+
 import copy
 from pathlib import Path
-from typing import List
 
 import numpy as np
 import pretty_midi
 import soundfile as sf
 from rich import print
-
-from .utils import ASSETS_PATH, get_default_sf2_file
 
 
 class NoteRecord:
@@ -18,8 +17,8 @@ class NoteRecord:
         self.path = midi_path
         self.duration: float = self.pm.get_end_time()
 
-    def _parse_notes(self) -> List[List[float]]:
-        res: List[List[float]] = []
+    def _parse_notes(self) -> list[list[float]]:
+        res: list[list[float]] = []
 
         for inst in self.pm.instruments:
             start_times = sorted(float(n.start) for n in inst.notes)
@@ -38,7 +37,7 @@ class NoteRecord:
 
 def midi_tracks_to_wav(
     midi_path: Path,
-    track_indices: List[int],
+    track_indices: list[int],
     wav_output_path: Path,
     sr: int = 44100,
     soundfont_path: Path | None = None,
@@ -50,10 +49,12 @@ def midi_tracks_to_wav(
         midi_path (Path): 输入 MIDI 文件路径
         track_indices (List[int]): 希望保留的轨道索引列表
         wav_output_path (Path): 输出 WAV 文件路径
-        fs (int): 采样率，默认 44100
-        soundfont_path (Path | None): 可选 SoundFont 文件路径，如果 None 使用默认
+        sr (int): 采样率，默认 44100
+        soundfont_path (Path | None): SoundFont 文件路径，必须显式提供
     """
-    soundfont_path = get_default_sf2_file() if soundfont_path is None else soundfont_path
+    if soundfont_path is None:
+        raise ValueError("soundfont_path must be provided")
+
     wav_output_path = wav_output_path / (midi_path.stem + "-" + "-".join(str(i) for i in track_indices) + ".wav")
     wav_output_path.parent.mkdir(parents=True, exist_ok=True)
     if wav_output_path.exists():
@@ -81,8 +82,3 @@ def midi_tracks_to_wav(
 
     print(f"WAV 文件已生成: {wav_output_path}")
     return wav_output_path
-
-
-if __name__ == "__main__":
-    note_record = NoteRecord(ASSETS_PATH / "midi/春日影-My GO_爱给网_aigei_com.mid")
-    print(note_record.notes[1])

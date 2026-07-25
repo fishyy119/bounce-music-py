@@ -1,3 +1,5 @@
+"""Bouncing-ball simulation engine."""
+
 from .body import Ball
 from .boundary import Boundary, CircleBoundary
 from .utils.usable_class import Vec2
@@ -36,10 +38,11 @@ class Simulator:
     def resolve_collision(self, override_e: float | None = None) -> None:
         """解析碰撞，修改小球速度"""
         self.ball_vel_before_collision = self.ball.vel
-        if self.boundary.is_colliding(self.ball):
-            if not self.bounce_flag:  # 避免单次步进未离开反弹区域导致异常的多次反弹
-                self.ball.vel = self.boundary.reflect(self.ball, override_e=override_e)
-                self.bounce_flag = True
+        if (
+            self.boundary.is_colliding(self.ball) and not self.bounce_flag
+        ):  # 避免单次步进未离开反弹区域导致异常的多次反弹
+            self.ball.vel = self.boundary.reflect(self.ball, override_e=override_e)
+            self.bounce_flag = True
 
 
 if __name__ == "__main__":

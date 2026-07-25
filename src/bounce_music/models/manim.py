@@ -1,7 +1,8 @@
-from dataclasses import dataclass, field
-from typing import List, Tuple
+"""Serializable simulation records shared by renderers."""
 
-Vec2 = Tuple[float, float]
+from dataclasses import dataclass, field
+
+Vec2 = tuple[float, float]
 
 
 @dataclass
@@ -52,4 +53,4 @@ class CollisionEvent:
 @dataclass
 class SimulationRecord:
     meta: MetaData
-    collisions: List[CollisionEvent] = field(default_factory=lambda: [])
+    collisions: list[CollisionEvent] = field(default_factory=lambda: [])

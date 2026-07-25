@@ -1,16 +1,11 @@
+"""Small reusable data structures used by the simulator."""
+
+from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass
 from math import hypot
 from typing import (
     Any,
-    Generic,
-    Iterable,
-    Iterator,
-    List,
-    Optional,
     Protocol,
-    Sequence,
-    Tuple,
-    TypeVar,
     overload,
 )
 
@@ -33,7 +28,7 @@ class Vec2:
     y: float
 
     @property
-    def as_tuple(self) -> Tuple[float, float]:
+    def as_tuple(self) -> tuple[float, float]:
         return (self.x, self.y)
 
     @classmethod
@@ -57,7 +52,7 @@ class Vec2:
     def __getitem__(self, index: int) -> float: ...
     @overload
     def __getitem__(self, index: slice) -> list[float]: ...
-    def __getitem__(self, index: int | slice) -> float | List[float]:
+    def __getitem__(self, index: int | slice) -> float | list[float]:
         data = [self.x, self.y]
         return data[index]
 
@@ -126,13 +121,10 @@ class OnlineStats:
         )
 
 
-T = TypeVar("T")
-
-
-class PeekableIterator(Generic[T]):
+class PeekableIterator[T]:
     def __init__(self, iterable: Iterable[T]):
         self._it: Iterator[T] = iter(iterable)
-        self._cache: Optional[T] = None
+        self._cache: T | None = None
 
     def peek(self) -> T:
         if self._cache is None:

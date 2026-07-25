@@ -1,0 +1,68 @@
+[build-system]
+requires = ["setuptools>=77,<82"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bounce-music-py"
+version = "0.1.0"
+description = "Synchronize simulated bouncing-ball motion with MIDI music."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = [
+    "pretty-midi>=0.2.11,<0.3",
+    "soundfile>=0.13.1,<0.14",
+    "pyfluidsynth>=1.3.4,<2",
+    "hydra-core>=1.3.2,<2",
+    "omegaconf>=2.2,<2.4",
+    "rich>=14.1,<15",
+    "tqdm>=4.67.1,<5",
+    "manim>=0.19.1,<0.20",
+    "pygame>=2.6.1,<3",
+    "imageio[ffmpeg]>=2.37.2,<3",
+    "numpy>=2.4,<3",
+    "scipy>=1.11.4,<2",
+    "scikit-image>=0.26,<0.27",
+    "jaxtyping>=0.3.5,<0.4",
+]
+
+[project.urls]
+Repository = "https://github.com/fishyy119/bounce-music-py"
+
+[dependency-groups]
+dev = ["ruff>=0.15.22,<0.16", "pyright>=1.1.411,<1.2"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+extend-exclude = ["test"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",
+    "RUF",
+    "SIM",
+    "C4",
+    "TC",
+]
+
+ignore = ["RUF001", "RUF002", "RUF003"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["_project_paths", "bounce_music", "pygame_renderer"]
+
+[tool.pyright]
+include = ["src", "scripts"]
+extraPaths = ["src"]
+pythonVersion = "3.12"
+typeCheckingMode = "strict"
+ignore = []
+reportUnusedImport = "warning"
+reportMissingTypeStubs = "none"

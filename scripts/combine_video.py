@@ -1,26 +1,24 @@
 # pyright: standard
+# ruff: noqa: RUF005
 import argparse
 import pickle
 import subprocess
 from pathlib import Path
-from typing import List, Set, Tuple
 
-import _pre_init
 from rich import print
 
-from src.midi import midi_tracks_to_wav
-from src.models.manim import SimulationRecord
+from _project_paths import ASSETS_PATH, FINAL_VIDEOS_PATH, MANIM_VIDEOS_PATH
+from bounce_music.midi import midi_tracks_to_wav
+from bounce_music.models.manim import SimulationRecord
+from bounce_music.utils import get_default_sf2_file
 
-MANIM_PATH = _pre_init.PROJECT_ROOT / "manim-videos"
-FINAL_PATH = _pre_init.PROJECT_ROOT / "final-videos"
 
-
-def parse_manim_folder(midi_file: Path, tracks: List[int]) -> str:
+def parse_manim_folder(midi_file: Path, tracks: list[int]) -> str:
     midi_name = midi_file.stem
 
-    common_quality: Set[Tuple[int, int]] | None = None
+    common_quality: set[tuple[int, int]] | None = None
     for t in tracks:
-        video_root = MANIM_PATH / f"{midi_name}-{t}"
+        video_root = MANIM_VIDEOS_PATH / f"{midi_name}-{t}"
         track_quality = set()
         if video_root.exists() and video_root.is_dir():
             for video_file in video_root.glob("*.mp4"):
@@ -52,22 +50,28 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    midi_file = _pre_init.ASSETS_PATH / "midi" / (args.music + ".mid")
+    midi_file = ASSETS_PATH / "midi" / (args.music + ".mid")
+    soundfont_path = args.soundfont or get_default_sf2_file(ASSETS_PATH / "sf2")
     video_quality = parse_manim_folder(midi_file, args.tracks)
-    records: List[SimulationRecord] = []
-    videos: List[Path] = []
+    records: list[SimulationRecord] = []
+    videos: list[Path] = []
 
     for t in args.tracks:
-        pkl_file = MANIM_PATH / f"{midi_file.stem}-{t}/{video_quality}.pkl"
-        videos.append(MANIM_PATH / f"{midi_file.stem}-{t}/{video_quality}.mp4")
+        pkl_file = MANIM_VIDEOS_PATH / f"{midi_file.stem}-{t}/{video_quality}.pkl"
+        videos.append(MANIM_VIDEOS_PATH / f"{midi_file.stem}-{t}/{video_quality}.mp4")
         with open(pkl_file, "rb") as f:
             record: SimulationRecord = pickle.load(f)
             records.append(record)
 
     wav_path = midi_tracks_to_wav(
-        midi_file, args.tracks, wav_output_path=_pre_init.ASSETS_PATH / "wav", soundfont_path=args.soundfont
+        midi_file,
+        args.tracks,
+        wav_output_path=ASSETS_PATH / "wav",
+        soundfont_path=soundfont_path,
     )
-    final_video_path = FINAL_PATH / f"{midi_file.stem}-{'-'.join(str(t) for t in args.tracks)}-{video_quality}.mp4"
+    final_video_path = (
+        FINAL_VIDEOS_PATH / f"{midi_file.stem}-{'-'.join(str(t) for t in args.tracks)}-{video_quality}.mp4"
+    )
 
     offsets = [int(r.collisions[0].time * 1000) for r in records]
     print(offsets)
@@ -108,5 +112,5 @@ if __name__ == "__main__":
         case _:
             raise NotImplementedError(f"Combining {len(videos)} tracks is not implemented yet.")
 
-    print(f"Running command: '{" ".join(ffmpeg_cmd)}'")
+    print(f"Running command: '{' '.join(ffmpeg_cmd)}'")
     subprocess.run(ffmpeg_cmd)

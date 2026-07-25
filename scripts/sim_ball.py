@@ -1,27 +1,30 @@
 import pickle
 from pathlib import Path
-from typing import List, cast
+from typing import TYPE_CHECKING, cast
 
-import _pre_init
 import hydra
 import numpy as np
 from hydra.core.hydra_config import HydraConfig
-from jaxtyping import Float
 from rich import print
 
-from src.body import Ball
-from src.boundary import CircleBoundary, EllipseBoundary
-from src.midi import NoteRecord
-from src.models import CollisionEvent, Config, MetaData, SimulationRecord
-from src.models.hydra import CircleConfig, EllipseConfig
-from src.simulator import Simulator
-from src.utils.usable_class import OnlineStats, PeekableIterator, Vec2
+from _project_paths import ASSETS_PATH
+from bounce_music.body import Ball
+from bounce_music.boundary import CircleBoundary, EllipseBoundary
+from bounce_music.midi import NoteRecord
+from bounce_music.models import CollisionEvent, Config, MetaData, SimulationRecord
+from bounce_music.simulator import Simulator
+from bounce_music.utils.usable_class import OnlineStats, PeekableIterator, Vec2
+
+if TYPE_CHECKING:
+    from jaxtyping import Float
+
+    from bounce_music.models.hydra import CircleConfig, EllipseConfig
 
 stats_vel = OnlineStats()
 stats_err = OnlineStats()
 
 
-@hydra.main(version_base=None, config_path=(_pre_init.ASSETS_PATH / "conf").as_posix(), config_name="config")
+@hydra.main(version_base=None, config_path=(ASSETS_PATH / "conf").as_posix(), config_name="config")
 def main(cfg: Config):
     ball = Ball(
         pos=Vec2.from_hydra(cfg.ball.pos),
@@ -31,7 +34,7 @@ def main(cfg: Config):
     )
     match cfg.boundary.type:
         case "circle":
-            cfg.boundary = cast(CircleConfig, cfg.boundary)
+            cfg.boundary = cast("CircleConfig", cfg.boundary)
             boundary = CircleBoundary(
                 center=Vec2(0, 0),
                 radius=cfg.boundary.radius,
@@ -42,7 +45,7 @@ def main(cfg: Config):
                 "[bold yellow][WARN][/bold yellow]",
                 "[yellow]The results of elliptical boundary may not be optimal.[/yellow]",
             )
-            cfg.boundary = cast(EllipseConfig, cfg.boundary)
+            cfg.boundary = cast("EllipseConfig", cfg.boundary)
             boundary = EllipseBoundary.from_ab(
                 center=Vec2(0, 0),
                 a=cfg.boundary.a,
@@ -55,7 +58,7 @@ def main(cfg: Config):
     simulator = Simulator(ball, boundary)
     dt = cfg.simulation.dt
 
-    midi = NoteRecord(_pre_init.ASSETS_PATH / "midi" / cfg.music.midi)
+    midi = NoteRecord(ASSETS_PATH / "midi" / cfg.music.midi)
     iter_notes = PeekableIterator(midi.notes[cfg.music.inst_idx])
     res = SimulationRecord(
         meta=MetaData(
@@ -92,7 +95,7 @@ def generate_bounce_record(
     iter_notes: PeekableIterator[float],
     res: SimulationRecord,
 ):
-    e_history: List[Float[np.ndarray, "n"]] = []
+    e_history: list[Float[np.ndarray, "n"]] = []  # noqa: F821, UP037
     is_init = False
     running = True
     free_time = 0
@@ -125,7 +128,7 @@ def generate_bounce_record(
                     has_note = False
                     desired_duration /= 2
                 else:
-                    assert False, "Cannot find suitable restitution coefficient"
+                    raise AssertionError("Cannot find suitable restitution coefficient")
 
             desired_e_another = np.abs(np.log(desired_e))
             desired_e = desired_e[desired_e_another.argsort()]

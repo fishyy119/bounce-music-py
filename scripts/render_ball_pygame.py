@@ -4,21 +4,23 @@ from __future__ import annotations
 import argparse
 import pickle
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-import _pre_init
 import imageio
 import numpy as np
 import tqdm
 from rich import print
 
-from scripts.pygame_renderer import Renderer
-from src.models.manim import SimulationRecord
-from src.utils.usable_class import Vec2
+from _project_paths import MANIM_VIDEOS_PATH, OUTPUTS_PATH
+from bounce_music.utils.usable_class import Vec2
+from pygame_renderer import Renderer
+
+if TYPE_CHECKING:
+    from bounce_music.models.manim import SimulationRecord
 
 
 def find_latest_pkl() -> Path:
-    outputs = _pre_init.PROJECT_ROOT / "outputs"
-    pkl_files = list(outputs.rglob("bounce_history.pkl"))
+    pkl_files = list(OUTPUTS_PATH.rglob("bounce_history.pkl"))
     if not pkl_files:
         raise FileNotFoundError("No .pkl files found in outputs")
     return max(pkl_files, key=lambda p: p.stat().st_mtime)
@@ -40,10 +42,10 @@ def main():
     # ball center is allowed to move in. We only support circles here.
     try:
         meta_b = meta.boundary
-        Q11 = float(getattr(meta_b, "Q11"))
-        Q12 = float(getattr(meta_b, "Q12"))
-        Q21 = float(getattr(meta_b, "Q21"))
-        Q22 = float(getattr(meta_b, "Q22"))
+        Q11 = float(meta_b.Q11)
+        Q12 = float(meta_b.Q12)
+        Q21 = float(meta_b.Q21)
+        Q22 = float(meta_b.Q22)
 
         # require axis-aligned (Q12/Q21 ~= 0) and equal radii (circle)
         eps = 1e-6
@@ -68,7 +70,7 @@ def main():
     fps = args.fps
     n_frames = max(1, int(duration * fps))
 
-    out_dir = _pre_init.PROJECT_ROOT / "manim-videos" / f"{Path(meta.midi_file).stem}-{meta.inst_idx}"
+    out_dir = MANIM_VIDEOS_PATH / f"{Path(meta.midi_file).stem}-{meta.inst_idx}"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = out_dir / f"{args.size}p{fps}.mp4"
 

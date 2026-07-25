@@ -4,9 +4,7 @@ Python 3.12.7
 
 *Sample demo: This video shows the simulated ball motion synchronized with audio (file: [assets/example.mp4](assets/example.mp4)).*
 
-
-https://github.com/user-attachments/assets/c6526d84-623b-481a-a3f1-d781043b0ae8
-
+<https://github.com/user-attachments/assets/c6526d84-623b-481a-a3f1-d781043b0ae8>
 
 ## Setup
 
@@ -16,14 +14,16 @@ https://github.com/user-attachments/assets/c6526d84-623b-481a-a3f1-d781043b0ae8
 * Download [FluidSynth](https://www.fluidsynth.org/) and place it under `C:\tools\fluidsynth`.
 * Download a SoundFont file (e.g. **FluidR3_GM**, or any other of your choice) and place it under `assets/sf2/`
 
-### 1. Python Dependencies
+### 1. Python Package
 
 * Clone this repository.
-* Install required packages:
+* Install the project in editable mode:
 
   ```bash
-  pip install -r ./requirements.txt
+  pip install -e .
   ```
+
+The installed Python package is imported as `bounce_music`.
 
 ## Usage
 

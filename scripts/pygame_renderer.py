@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import List, Tuple
 
 import numpy as np
 
@@ -25,7 +24,7 @@ import pygame
 class Piece:
     x: float
     y: float
-    color: Tuple[int, int, int]
+    color: tuple[int, int, int]
     alpha: float = 1.0
 
 
@@ -44,13 +43,13 @@ class Renderer:
         self.px_per_x = self.width / self.world_w
         self.px_per_y = self.height / self.world_h
 
-    def world_to_px(self, x: float, y: float) -> Tuple[int, int]:
+    def world_to_px(self, x: float, y: float) -> tuple[int, int]:
         # world coords centered at (0,0). map to pixel coords
         px = int((x / self.world_w + 0.5) * self.width)
         py = int((-y / self.world_h + 0.5) * self.height)  # invert y
         return px, py
 
-    def render_frame(self, ball_pos: Tuple[float, float], ball_radius: float, pieces: List[Piece] = None):
+    def render_frame(self, ball_pos: tuple[float, float], ball_radius: float, pieces: list[Piece] | None = None):
         pieces = pieces or []
         # clear
         self.surface.fill((0, 0, 0))

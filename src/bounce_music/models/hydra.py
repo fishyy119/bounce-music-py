@@ -1,3 +1,5 @@
+"""Hydra configuration schemas."""
+
 from dataclasses import dataclass
 
 from hydra.core.config_store import ConfigStore

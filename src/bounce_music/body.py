@@ -1,3 +1,5 @@
+"""Physical ball model."""
+
 from dataclasses import dataclass
 
 from .models.manim import MetaBall

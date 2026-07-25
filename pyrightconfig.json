@@ -1,6 +1,0 @@
-{
-  "typeCheckingMode": "strict",
-  "ignore": [],
-  "reportUnusedImport": "warning",
-  "reportMissingTypeStubs": "none"
-}

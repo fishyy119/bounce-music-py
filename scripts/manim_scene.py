@@ -3,14 +3,15 @@ import json
 import pickle
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, cast
+from typing import cast
 
-import _pre_init
-from manim import *  # pyright: ignore[reportWildcardImportFromLibrary]
+import numpy as np
+from manim import Animation, Circle, Mobject, Scene, config
 
-from src.boundary import EllipseBoundary
-from src.models.manim import CollisionEvent, MetaData, MetaEllipse, SimulationRecord
-from src.utils.usable_class import Vec2
+from _project_paths import PROJECT_ROOT
+from bounce_music.boundary import EllipseBoundary
+from bounce_music.models.manim import CollisionEvent, MetaData, MetaEllipse, SimulationRecord
+from bounce_music.utils.usable_class import Vec2
 
 
 @dataclass
@@ -21,7 +22,7 @@ class Config:
 
     @classmethod
     def from_json(cls, path: Path) -> "Config":
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             raw = json.load(f)
 
         filtered = {k: v for k, v in raw.items() if not k.startswith("_")}
@@ -29,7 +30,7 @@ class Config:
         return cls(**filtered)
 
 
-record_config = Config.from_json(_pre_init.PROJECT_ROOT / "scripts/config.tmp.json")
+record_config = Config.from_json(PROJECT_ROOT / "scripts/config.tmp.json")
 with open(record_config.pkl_file, "rb") as f:
     record: SimulationRecord = pickle.load(f)
 
@@ -38,7 +39,7 @@ collisions = record.collisions
 
 match meta.boundary.type:
     case "ellipse":
-        meta.boundary = cast(MetaEllipse, meta.boundary)
+        meta.boundary = cast("MetaEllipse", meta.boundary)
         boundary = EllipseBoundary.from_manim_meta(meta.boundary)
         w, h = boundary.calc_manim_wh()
         config.frame_height = h
@@ -75,7 +76,7 @@ class PiecewiseTrajectory:
         p0: Vec2,
         v0: Vec2,
         a: Vec2,
-        collisions: List[CollisionEvent],
+        collisions: list[CollisionEvent],
     ):
         self.p0 = p0
         self.v0 = v0
@@ -83,7 +84,7 @@ class PiecewiseTrajectory:
         self.collisions = collisions
 
         # 预计算每一段的初始状态
-        self.segments: List[BallSegment] = []
+        self.segments: list[BallSegment] = []
         self._build_segments()
 
     def _build_segments(self):
@@ -124,7 +125,7 @@ class BallMotionAnimation(Animation):
 
 
 class BallSystem:
-    def __init__(self, meta: MetaData, record_config: Config, collisions: List[CollisionEvent], scene: Scene):
+    def __init__(self, meta: MetaData, record_config: Config, collisions: list[CollisionEvent], scene: Scene):
         self.meta = meta
         self.config = record_config
         self.collisions = collisions
@@ -174,7 +175,7 @@ class BallSystem:
             return v / s * vmax * np.tanh(s / vmax)
 
         # 生成分裂小球
-        pieces: List[Mobject] = []
+        pieces: list[Mobject] = []
         n_pieces = 8
         R = self.ball.radius
         piece_radius = R / (n_pieces**0.5)
@@ -194,13 +195,13 @@ class BallSystem:
         vel_ball = tanh_cap(vel_ball, min(config.frame_height, config.frame_width) / 3)
         angles = np.random.uniform(0, 2 * np.pi, n_pieces)
         speeds = np.random.uniform(0.5, 1.5, n_pieces)
-        velocities = [vel_ball + np.array([np.cos(a), np.sin(a), 0]) * s for a, s in zip(angles, speeds)]
+        velocities = [vel_ball + np.array([np.cos(a), np.sin(a), 0]) * s for a, s in zip(angles, speeds, strict=True)]
 
         # 播放动画
         self.scene.play(
             *[
                 piece.animate.move_to(piece.get_center() + vel).set_opacity(0.0)
-                for piece, vel in zip(pieces, velocities)
+                for piece, vel in zip(pieces, velocities, strict=True)
             ],
             run_time=run_time,
         )

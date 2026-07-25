@@ -1,0 +1,1 @@
+"""Bounce Music simulation library."""

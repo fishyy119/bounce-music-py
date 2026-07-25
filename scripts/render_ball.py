@@ -1,7 +1,9 @@
 # pyright: standard
+# ruff: noqa: RUF005
 """
 调用 Manim 进行视频渲染，内存占用方面可能表现不佳
 """
+
 import argparse
 import json
 import pickle
@@ -10,21 +12,19 @@ import subprocess
 import sys
 from pathlib import Path
 
-import _pre_init
 from rich import print
 
-from src.models.manim import SimulationRecord
+from _project_paths import MANIM_VIDEOS_PATH, OUTPUTS_PATH, PROJECT_ROOT
+from bounce_music.models.manim import SimulationRecord
 
-SCENE_SCRIPT = _pre_init.PROJECT_ROOT / "scripts/manim_scene.py"
+SCENE_SCRIPT = PROJECT_ROOT / "scripts/manim_scene.py"
 
 
 def find_latest_pkl() -> Path:
-    outputs = _pre_init.PROJECT_ROOT / "outputs"
-
-    pkl_files = list(outputs.rglob("bounce_history.pkl"))
+    pkl_files = list(OUTPUTS_PATH.rglob("bounce_history.pkl"))
 
     if not pkl_files:
-        raise FileNotFoundError(f"No .pkl files found in {outputs}")
+        raise FileNotFoundError(f"No .pkl files found in {OUTPUTS_PATH}")
 
     # 按修改时间排序，取最新
     return max(pkl_files, key=lambda p: p.stat().st_mtime)
@@ -46,18 +46,15 @@ if __name__ == "__main__":
         "ball_color": args.ball_color,
         "border_color": args.border_color,
     }
-    with open(_pre_init.PROJECT_ROOT / "scripts/config.tmp.json", "w", encoding="utf-8") as f:
+    with open(PROJECT_ROOT / "scripts/config.tmp.json", "w", encoding="utf-8") as f:
         json.dump(config_data, f, indent=2)
 
     with open(pkl_file, "rb") as f:
         record: SimulationRecord = pickle.load(f)
 
-    sys.argv = [sys.argv[0]] + unknown
+    sys.argv = [sys.argv[0], *unknown]
     output_file = (
-        _pre_init.PROJECT_ROOT
-        / f"manim-videos"
-        / f"{Path(record.meta.midi_file).stem}-{record.meta.inst_idx}"
-        / f"{args.size}p{args.fps}.mp4"
+        MANIM_VIDEOS_PATH / f"{Path(record.meta.midi_file).stem}-{record.meta.inst_idx}" / f"{args.size}p{args.fps}.mp4"
     )
     output_file.parent.mkdir(parents=True, exist_ok=True)
     if pkl_file.resolve() == output_file.with_suffix(".pkl").resolve():
@@ -73,5 +70,5 @@ if __name__ == "__main__":
         + ["--fps", str(args.fps)]
         + ["--output_file", output_file.as_posix()]
     )
-    print(f"Running command: '{" ".join(manim_cmd)}'")
+    print(f"Running command: '{' '.join(manim_cmd)}'")
     subprocess.run(manim_cmd)

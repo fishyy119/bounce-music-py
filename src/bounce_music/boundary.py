@@ -1,16 +1,14 @@
 from abc import ABC, abstractmethod
-from typing import List, Tuple
 
 import numpy as np
 from jaxtyping import Float
 from manim import VMobject
 
-from src.utils.shape import (
-    ellipse_boundary_to_manim,  # pyright: ignore[reportUnknownVariableType]
-)
-
 from .body import Ball
 from .models.manim import MetaEllipse
+from .utils.shape import (
+    ellipse_boundary_to_manim,  # pyright: ignore[reportUnknownVariableType]
+)
 from .utils.usable_class import Mat2, Vec2
 
 """
@@ -32,7 +30,7 @@ class Boundary(ABC):
         """判断小球是否与边界碰撞"""
 
     @abstractmethod
-    def calc_desired_restitution(self, t_f: float, pos: Vec2, vel: Vec2, acc: Vec2) -> Float[np.ndarray, "n"] | None:
+    def calc_desired_restitution(self, t_f: float, pos: Vec2, vel: Vec2, acc: Vec2) -> Float[np.ndarray, "n"] | None:  # noqa: F821
         """
         根据期望的时间，计算期望恢复系数，输入反弹前速度vel与外法向norm
 
@@ -60,10 +58,10 @@ class EllipseBoundary(Boundary):
     def __init__(
         self,
         Q: Mat2,
-        center: Vec2 = Vec2(0.0, 0.0),
+        center: Vec2 | None = None,
         restitution: float = 1.0,
     ):
-        self.center = center
+        self.center = Vec2(0.0, 0.0) if center is None else center
         self.Q = Q
         self.restitution = restitution
 
@@ -76,7 +74,7 @@ class EllipseBoundary(Boundary):
         p_rel = ball.pos - self.center
         return (p_rel @ self.Q @ p_rel >= 1).item()
 
-    def calc_desired_restitution(self, t_f: float, pos: Vec2, vel: Vec2, acc: Vec2) -> Float[np.ndarray, "n"] | None:
+    def calc_desired_restitution(self, t_f: float, pos: Vec2, vel: Vec2, acc: Vec2) -> Float[np.ndarray, "n"] | None:  # noqa: F821
         norm = self.get_normal(pos)  # 碰撞点外法向方向
 
         r_f = pos + vel * t_f + 0.5 * acc * t_f**2
@@ -92,7 +90,7 @@ class EllipseBoundary(Boundary):
 
         # * 验证环节
         k = k[k > 0]  # 只保留正值
-        valid_k: List[float] = []  # 用列表收集合法恢复系数
+        valid_k: list[float] = []  # 用列表收集合法恢复系数
         # 运动过程需满足不等式约束
         ball_tmp = Ball(pos=pos, vel=vel, acc=acc)
         t_samples = np.linspace(0, t_f, 300)
@@ -120,7 +118,7 @@ class EllipseBoundary(Boundary):
     def to_manim_object(self, ball_r: float, color: str, grid_res: int = 400) -> VMobject:
         return ellipse_boundary_to_manim(self.Q, self.center, ball_r, grid_res, color=color)
 
-    def calc_manim_wh(self) -> Tuple[float, float]:
+    def calc_manim_wh(self) -> tuple[float, float]:
         # TODO: 考虑旋转
         a = 1 / np.sqrt(self.Q[0, 0])
         b = 1 / np.sqrt(self.Q[1, 1])
@@ -136,7 +134,7 @@ class EllipseBoundary(Boundary):
         cls,
         a: float,
         b: float,
-        center: Vec2 = Vec2(0.0, 0.0),
+        center: Vec2 | None = None,
         restitution: float = 1.0,
     ) -> "EllipseBoundary":
         Q = np.array([[1 / a**2, 0.0], [0.0, 1 / b**2]])
