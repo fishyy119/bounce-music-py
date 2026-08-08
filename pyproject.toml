@@ -16,13 +16,9 @@ dependencies = [
     "hydra-core>=1.3.2,<2",
     "omegaconf>=2.2,<2.4",
     "rich>=14.1,<15",
-    "tqdm>=4.67.1,<5",
-    "manim>=0.19.1,<0.20",
-    "pygame>=2.6.1,<3",
-    "imageio[ffmpeg]>=2.37.2,<3",
+    "rich_argparse>=1.8,<2",
+    "pycairo>=1.29,<2",
     "numpy>=2.4,<3",
-    "scipy>=1.11.4,<2",
-    "scikit-image>=0.26,<0.27",
     "jaxtyping>=0.3.5,<0.4",
 ]
 
@@ -56,7 +52,7 @@ select = [
 ignore = ["RUF001", "RUF002", "RUF003"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["_project_paths", "bounce_music", "pygame_renderer"]
+known-first-party = ["_project_paths", "bounce_music"]
 
 [tool.pyright]
 include = ["src", "scripts"]

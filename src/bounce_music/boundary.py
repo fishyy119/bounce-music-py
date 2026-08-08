@@ -2,13 +2,9 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 from jaxtyping import Float
-from manim import VMobject
 
 from .body import Ball
-from .models.manim import MetaEllipse
-from .utils.shape import (
-    ellipse_boundary_to_manim,  # pyright: ignore[reportUnknownVariableType]
-)
+from .models.simulation import EllipseMetadata
 from .utils.usable_class import Mat2, Vec2
 
 """
@@ -77,10 +73,11 @@ class EllipseBoundary(Boundary):
     def calc_desired_restitution(self, t_f: float, pos: Vec2, vel: Vec2, acc: Vec2) -> Float[np.ndarray, "n"] | None:  # noqa: F821
         norm = self.get_normal(pos)  # 碰撞点外法向方向
 
-        r_f = pos + vel * t_f + 0.5 * acc * t_f**2
+        pos_relative = pos - self.center
+        r_f_relative = pos_relative + vel * t_f + 0.5 * acc * t_f**2
         A = t_f**2 * (norm @ self.Q @ norm)
-        B = 2 * t_f * (r_f @ self.Q @ norm)
-        C = r_f @ self.Q @ r_f - 1
+        B = 2 * t_f * (r_f_relative @ self.Q @ norm)
+        C = r_f_relative @ self.Q @ r_f_relative - 1
 
         roots = np.roots([A.item(), B.item(), C.item()])  # 返回所有复数根
         real_roots = roots[np.isreal(roots)].real  # 保持为np数组，只取实根
@@ -97,7 +94,7 @@ class EllipseBoundary(Boundary):
         for e in k:
             vel_after = self.reflect(ball_tmp, override_e=e.item())
             p_samples = (
-                np.asarray(pos)
+                np.asarray(pos_relative)
                 + np.asarray(vel_after) * t_samples[:, None]
                 + 0.5 * np.asarray(acc) * t_samples[:, None] ** 2
             )
@@ -107,27 +104,22 @@ class EllipseBoundary(Boundary):
 
         return np.array(valid_k) if valid_k else None
 
-    def to_manim_meta(self) -> MetaEllipse:
-        return MetaEllipse(
-            Q11=self.Q[0, 0],
-            Q12=self.Q[0, 1],
-            Q21=self.Q[1, 0],
-            Q22=self.Q[1, 1],
+    def to_metadata(self) -> EllipseMetadata:
+        return EllipseMetadata(
+            q11=float(self.Q[0, 0]),
+            q12=float(self.Q[0, 1]),
+            q21=float(self.Q[1, 0]),
+            q22=float(self.Q[1, 1]),
+            center=self.center.as_tuple,
         )
 
-    def to_manim_object(self, ball_r: float, color: str, grid_res: int = 400) -> VMobject:
-        return ellipse_boundary_to_manim(self.Q, self.center, ball_r, grid_res, color=color)
-
-    def calc_manim_wh(self) -> tuple[float, float]:
-        # TODO: 考虑旋转
-        a = 1 / np.sqrt(self.Q[0, 0])
-        b = 1 / np.sqrt(self.Q[1, 1])
-        return a * 2.4, b * 2.4
-
     @classmethod
-    def from_manim_meta(cls, meta: MetaEllipse) -> "EllipseBoundary":
-        Q = np.array([[meta.Q11, meta.Q12], [meta.Q21, meta.Q22]])
-        return cls(Q=Q)
+    def from_metadata(cls, metadata: EllipseMetadata) -> "EllipseBoundary":
+        q = np.array(
+            [[metadata.q11, metadata.q12], [metadata.q21, metadata.q22]],
+            dtype=np.float64,
+        )
+        return cls(Q=q, center=Vec2.from_tuple(metadata.center))
 
     @classmethod
     def from_ab(

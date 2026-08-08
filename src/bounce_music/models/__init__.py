@@ -1,13 +1,13 @@
 """Configuration and serialization models."""
 
 from .hydra import Config
-from .manim import CollisionEvent, MetaBall, MetaData, MetaEllipse, SimulationRecord
+from .simulation import BallMetadata, CollisionEvent, EllipseMetadata, SimulationMetadata, SimulationRecord
 
 __all__ = [
+    "BallMetadata",
     "CollisionEvent",
     "Config",
-    "MetaBall",
-    "MetaData",
-    "MetaEllipse",
+    "EllipseMetadata",
+    "SimulationMetadata",
     "SimulationRecord",
 ]

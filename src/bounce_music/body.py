@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from .models.manim import MetaBall
+from .models.simulation import BallMetadata
 from .utils.usable_class import Vec2
 
 
@@ -24,8 +24,8 @@ class Ball:
         self.last_pos = self.pos
         self.pos = next_pos
 
-    def to_manim_meta(self) -> MetaBall:
-        return MetaBall(
+    def to_metadata(self) -> BallMetadata:
+        return BallMetadata(
             radius=self.radius,
             initial_pos=self.pos.as_tuple,
             initial_vel=self.vel.as_tuple,

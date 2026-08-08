@@ -11,7 +11,7 @@ from _project_paths import ASSETS_PATH
 from bounce_music.body import Ball
 from bounce_music.boundary import CircleBoundary, EllipseBoundary
 from bounce_music.midi import NoteRecord
-from bounce_music.models import CollisionEvent, Config, MetaData, SimulationRecord
+from bounce_music.models import CollisionEvent, Config, SimulationMetadata, SimulationRecord
 from bounce_music.simulator import Simulator
 from bounce_music.utils.usable_class import OnlineStats, PeekableIterator, Vec2
 
@@ -61,9 +61,9 @@ def main(cfg: Config):
     midi = NoteRecord(ASSETS_PATH / "midi" / cfg.music.midi)
     iter_notes = PeekableIterator(midi.notes[cfg.music.inst_idx])
     res = SimulationRecord(
-        meta=MetaData(
-            ball=ball.to_manim_meta(),
-            boundary=boundary.to_manim_meta(),
+        metadata=SimulationMetadata(
+            ball=ball.to_metadata(),
+            boundary=boundary.to_metadata(),
             dt=dt,
             midi_file=midi.path.as_posix(),
             inst_idx=cfg.music.inst_idx,
@@ -75,9 +75,9 @@ def main(cfg: Config):
     except StopIteration:
         print("Simulation completed.")
     finally:
-        res.meta.ball.final_vel = simulator.ball_vel_before_collision.as_tuple
-        res.meta.music_total_time = midi.duration
-        res.meta.prefix_free_time = res.collisions[0].time if res.collisions else 0.0
+        res.metadata.ball.final_vel = simulator.ball_vel_before_collision.as_tuple
+        res.metadata.music_total_time = midi.duration
+        res.metadata.prefix_free_time = res.collisions[0].time if res.collisions else 0.0
         print("Ball velocity statistics (m/s):", end=" ")
         stats_vel.print_stats()
         print("Collision error statistics (s):", end=" ")

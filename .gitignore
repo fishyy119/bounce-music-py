@@ -2,9 +2,9 @@ temp*
 outcmaes
 outputs/*
 manim-videos/*
-final_videos/*
+rendered-videos/*
+final-videos/*
 media/*
-**/config.tmp.json
 *.sf2
 *.mp4
 *.wav

@@ -1,6 +1,6 @@
 # bounce-music-py
 
-Python 3.12.7
+Synchronize simulated bouncing-ball motion with MIDI music. The project requires Python 3.12 or newer.
 
 *Sample demo: This video shows the simulated ball motion synchronized with audio (file: [assets/example.mp4](assets/example.mp4)).*
 
@@ -8,26 +8,25 @@ Python 3.12.7
 
 ## Setup
 
-### 0. Non-Python Dependencies
+### Non-Python dependencies
 
-* Download [ffmpeg](https://ffmpeg.org/download.html) and add it to your system `PATH`.
-* Download [FluidSynth](https://www.fluidsynth.org/) and place it under `C:\tools\fluidsynth`.
-* Download a SoundFont file (e.g. **FluidR3_GM**, or any other of your choice) and place it under `assets/sf2/`
+- Download [FFmpeg](https://ffmpeg.org/download.html) and add it to your system `PATH`.
 
-### 1. Python Package
+- Download [FluidSynth](https://www.fluidsynth.org/) and place it under `C:\tools\fluidsynth`.
 
-* Clone this repository.
-* Install the project in editable mode:
+- Download a SoundFont file, such as **FluidR3_GM**, and place it under `assets/sf2/`.
 
-  ```bash
-  pip install -e .
-  ```
+### Python package
 
-The installed Python package is imported as `bounce_music`.
+Clone the repository and install it in editable mode:
 
-## Usage
+```bash
+pip install -e .
+```
 
-Place your midi file under `assets/midi/`. Then the overall workflow is illustrated below.
+## Workflow
+
+Place MIDI files under `assets/midi/`. The repository-based script workflow is:
 
 ```mermaid
 flowchart LR
@@ -40,7 +39,7 @@ direction LR
 
 MID[(assets/midi/*.mid)]
 PKL[(outputs/*.pkl)]
-MP4_RAW[(manim-videos/*.mp4<br/>_copy_ manim-videos/\*.pkl)]
+MP4_RAW[(rendered-videos/*.mp4<br/>_copy_ rendered-videos/\*.pkl)]
 MP4_FINAL[(final-videos/*.mp4)]
 
 MID ~~~ PKL
@@ -78,25 +77,17 @@ COMBINE --> MP4_FINAL
 
 ```
 
-For detailed script usage, run:
+Run the three stages with:
 
 ```bash
-python scripts/???.py --help
+python scripts/sim_ball.py
+python scripts/render_ball.py
+python scripts/combine_video.py --music MIDI_NAME --tracks 0
 ```
 
-> [!NOTE]
-> `sim_ball.py` uses **Hydra** as its configuration system.
-> Configuration is defined in YAML files located under `assets/conf`, and parameters can be dynamically overridden via command-line arguments.
-> For details on Hydra’s configuration mechanism, see the [documents](https://hydra.cc/docs/intro/).
->
-> During execution, Hydra will generate a configuration snapshot under the `outputs/` directory.
-> The generated `.pkl` file will also be placed in this directory.
+Use `--help` on any script to inspect its options.
 
-> [!IMPORTANT]
-> Currently, `render_ball.py` uses **Manim** for rendering.
-> To avoid timing drift introduced by aligning multiple animation segments—which would cause audio desynchronization—the entire rendering process is implemented as a single Manim animation.
+> [!NOTE]
+> `sim_ball.py` uses [Hydra](https://hydra.cc/docs/intro/) with configuration files under `assets/conf/`, the configuration values can be overridden from the command line.
 >
-> However, Manim exhibits poor memory performance in this scenario.
-> In test cases, rendering a **960×960, 30 fps, 200 s** animation results in approximately **12 GB peak memory usage**, with growth showing a nonlinear pattern.
->
-> On systems with limited memory, it is recommended to reduce rendering quality (e.g., resolution or frame rate) to mitigate memory pressure.
+> Hydra will generate a configuration snapshot and `bounce_history.pkl` under `outputs/`.
