@@ -35,7 +35,6 @@ flowchart LR
 %% Data Objects
 %% ======================
 subgraph DATA["Data Artifacts"]
-direction LR
 
 MID[(assets/midi/*.mid)]
 PKL[(outputs/*.pkl)]
@@ -52,7 +51,6 @@ end
 %% Program Objects
 %% ======================
 subgraph PROCESS["Programs (scripts/)"]
-direction LR
 
 SIM[sim_ball.py]
 RENDER[render_ball.py]
