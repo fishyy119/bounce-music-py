@@ -29,6 +29,12 @@ pip install -e .
 Place MIDI files under `assets/midi/`. The repository-based script workflow is:
 
 ```mermaid
+---
+config:
+  layout: dagre
+  theme: default
+  look: classic
+---
 flowchart LR
 
 %% ======================
